@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & Unit Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # setup-android 默认会安装 `tools` 包，新版 cmdline-tools 已移除该包，这里清空默认包列表。
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: ''
+
+      # hook 模块需要 build-tools 的 d8 与 platforms/android-34/android.jar。
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.6'
+
+      - name: Unit tests
+        run: gradle :core:testDebugUnitTest :service:testDebugUnitTest :app:testDebugUnitTest --console=plain --stacktrace
+
+      - name: Assemble APKs
+        run: gradle :app:assembleDebug :app:assembleRelease :tools:android-car-boot:service:assembleDebug --console=plain --stacktrace
+
+      # android-car-boot：验证 bootclasspath 客户端 jar 的构建链路（仅校验，不产出发布件）。
+      # api/build.sh 默认的 d8 是 Windows 的 d8.bat，Linux CI 通过 D8 覆盖。
+      - name: Build android-car-boot bootclasspath jar
+        run: |
+          export D8="$ANDROID_SDK_ROOT/build-tools/34.0.0/d8"
+          bash tools/android-car-boot/api/build.sh
+
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            */build/reports/tests/
+            */build/test-results/
+          if-no-files-found: ignore
+          retention-days: 7

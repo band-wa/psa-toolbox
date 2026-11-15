@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+        冒充 AOSP 的 com.android.car CarService：没有 Activity，只提供 Binder 服务端与调试广播接收器。
+        组件均 exported=true，供 bootclasspath 中的 android.car 客户端（com.bandwa.openadb，uid 1000）
+        显式绑定 ComponentName("com.android.car", "com.android.car.CarService")。
+    -->
+    <application
+        android:allowBackup="false"
+        android:label="CarService"
+        android:supportsRtl="true">
+
+        <service
+            android:name=".CarService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.car.ICar" />
+            </intent-filter>
+        </service>
+
+        <receiver
+            android:name=".ControlReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.android.car.CONTROL" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

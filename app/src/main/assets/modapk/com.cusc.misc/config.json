@@ -1,0 +1,193 @@
+{
+  "packageName": "com.cusc.misc",
+  "version": "25080401",
+  "modifications": [
+    {
+      "filePath": "smali/com/cusc/misc/observer/KeyEventEmitter.smali",
+      "operations": [
+        {
+          "type": "replaceValue",
+          "oldValue": "const-string v1, \"com.cusc.media\"",
+          "newValue": "const-string v1, \"persist.bandwa.music.shortclick\""
+        },
+        {
+          "type": "replaceBetween",
+          "startMarker": "const-string v1, \"persist.bandwa.music.shortclick\"",
+          "endMarker": "goto",
+          "newContent": "const-string v2, \"com.cusc.media\"\n\nconst-string v3, \"com.cusc.media.MainActivity\"\n\ninvoke-static {v1, v2, v3}, Lcom/bandwa/hook/Hook;->launchByProp(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V\n"
+        },
+        {
+          "type": "replaceValue",
+          "oldValue": "const-string v1, \"com.autonavi.amapauto\"",
+          "newValue": "const-string v1, \"persist.bandwa.map.shortclick\""
+        },
+        {
+          "type": "replaceBetween",
+          "startMarker": "const-string v1, \"persist.bandwa.map.shortclick\"",
+          "endMarker": "goto",
+          "newContent": "const-string v2, \"com.autonavi.amapauto\"\n\nconst-string v3, \"com.autonavi.amapauto.MainMapActivity\"\n\ninvoke-static {v1, v2, v3}, Lcom/bandwa/hook/Hook;->launchByProp(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V\n"
+        },
+        {
+          "type": "replaceRegex",
+          "pattern": "const-string (p\\d+|v\\d+), \"tbox\\.bcall\\.running\"\n\n    invoke-static \\{\\1, (p\\d+|v\\d+)\\}, Lcom/android/settingslib/os/SystemProperties;->getBoolean\\(Ljava/lang/String;Z\\)Z\n\n    move-result \\1\n\n    if-eqz \\1, (:[\\w]+)",
+          "newValue": "invoke-static {}, Lcom/bandwa/hook/Hook;->isBcallRunning()Z\n\n    move-result $1\n\n    if-eqz $1, $3"
+        }
+      ]
+    },
+    {
+      "filePath": "smali/com/cusc/misc/observer/KeyEventEmitter.smali",
+      "operations": [
+        {
+          "type": "insertBeforeMethod",
+          "method": ".method private onKeyClick(I)V",
+          "contentFile": "psa_handle.smali",
+          "skipIfContains": ".method private static psaHandle("
+        },
+        {
+          "type": "insertBeforeMethod",
+          "method": ".method private onKeyClick(I)V",
+          "contentFile": "psa_launch.smali",
+          "skipIfContains": ".method private static psaLaunch("
+        },
+        {
+          "type": "insertAfterRegisters",
+          "method": ".method private onKeyClick(I)V",
+          "contentFile": "psa_onkeyclick.smali",
+          "skipIfContains": "# PSA-MARK-KEYCLICK"
+        },
+        {
+          "type": "insertAfterRegisters",
+          "method": ".method private onKeyLongClick(I)V",
+          "contentFile": "psa_onkeylongclick.smali",
+          "skipIfContains": "# PSA-MARK-KEYLONGCLICK"
+        }
+      ]
+    },
+    {
+      "filePath": "smali/com/platform/bdstar/drive/BdstarDriveImpl.smali",
+      "operations": [
+        {
+          "type": "replaceBetween",
+          "startMarker": "iput-object v0, p0, Lcom/platform/bdstar/drive/BdstarDriveImpl;->mCarApi:Landroid/car/Car;",
+          "endMarker": "return-void",
+          "newContent": "\n\n    .line 938\n    :try_start_hook\n    invoke-virtual {v0}, Landroid/car/Car;->connect()V\n    :try_end_hook\n    .catch Ljava/lang/Throwable; {:try_start_hook .. :try_end_hook} :catch_hook\n    goto :goto_hook\n\n    :catch_hook\n    const-string v1, \"BandwaHook\"\n    const-string v2, \"car service unavailable, skip connect\"\n    invoke-static {v1, v2}, Landroid/util/Log;->w(Ljava/lang/String;Ljava/lang/String;)I\n\n    :goto_hook\n    "
+        }
+      ],
+      "debugOnly": true
+    },
+    {
+      "filePath": "smali/com/cusc/misc/observer/UsbUpdateEmitter.smali",
+      "operations": [
+        {
+          "type": "replaceValue",
+          "oldValue": "invoke-virtual {v0, v1}, Lcom/android/settingslib/os/UpdateManager;->bind(Lcom/android/settingslib/os/UpdateManager$Callback;)Z",
+          "newValue": ":try_start_usb\n    invoke-virtual {v0, v1}, Lcom/android/settingslib/os/UpdateManager;->bind(Lcom/android/settingslib/os/UpdateManager$Callback;)Z\n    :try_end_usb\n    .catch Ljava/lang/Throwable; {:try_start_usb .. :try_end_usb} :catch_usb\n    goto :after_usb\n\n    :catch_usb\n    const-string v0, \"BandwaHook\"\n    const-string v1, \"update engine unavailable\"\n    invoke-static {v0, v1}, Landroid/util/Log;->w(Ljava/lang/String;Ljava/lang/String;)I\n\n    :after_usb"
+        }
+      ],
+      "debugOnly": true
+    },
+    {
+      "filePath": "smali/com/platform/bdstar/hvac/BdstarHvacImpl.smali",
+      "operations": [
+        {
+          "type": "replaceBetween",
+          "startMarker": "iput-object v0, p0, Lcom/platform/bdstar/hvac/BdstarHvacImpl;->mCarApi:Landroid/car/Car;",
+          "endMarker": "return-void",
+          "newContent": "\n\n    :try_start_hook\n    invoke-virtual {v0}, Landroid/car/Car;->connect()V\n    :try_end_hook\n    .catch Ljava/lang/Throwable; {:try_start_hook .. :try_end_hook} :catch_hook\n    goto :goto_hook\n\n    :catch_hook\n    const-string v1, \"BandwaHook\"\n    const-string v2, \"car service unavailable, skip connect\"\n    invoke-static {v1, v2}, Landroid/util/Log;->w(Ljava/lang/String;Ljava/lang/String;)I\n\n    :goto_hook\n    "
+        }
+      ],
+      "debugOnly": true
+    },
+    {
+      "filePath": "smali/com/platform/bdstar/key/BdstarKeyImpl.smali",
+      "operations": [
+        {
+          "type": "replaceBetween",
+          "startMarker": "iput-object v0, p0, Lcom/platform/bdstar/key/BdstarKeyImpl;->mCarApi:Landroid/car/Car;",
+          "endMarker": "return-void",
+          "newContent": "\n\n    :try_start_hook\n    invoke-virtual {v0}, Landroid/car/Car;->connect()V\n    :try_end_hook\n    .catch Ljava/lang/Throwable; {:try_start_hook .. :try_end_hook} :catch_hook\n    goto :goto_hook\n\n    :catch_hook\n    const-string v1, \"BandwaHook\"\n    const-string v2, \"car service unavailable, skip connect\"\n    invoke-static {v1, v2}, Landroid/util/Log;->w(Ljava/lang/String;Ljava/lang/String;)I\n\n    :goto_hook\n    "
+        }
+      ],
+      "debugOnly": true
+    },
+    {
+      "filePath": "smali/com/platform/bdstar/sound/BdstarSoundImpl.smali",
+      "operations": [
+        {
+          "type": "replaceBetween",
+          "startMarker": "iput-object v0, p0, Lcom/platform/bdstar/sound/BdstarSoundImpl;->mCarApi:Landroid/car/Car;",
+          "endMarker": "return-void",
+          "newContent": "\n\n    :try_start_hook\n    invoke-virtual {v0}, Landroid/car/Car;->connect()V\n    :try_end_hook\n    .catch Ljava/lang/Throwable; {:try_start_hook .. :try_end_hook} :catch_hook\n    goto :goto_hook\n\n    :catch_hook\n    const-string v1, \"BandwaHook\"\n    const-string v2, \"car service unavailable, skip connect\"\n    invoke-static {v1, v2}, Landroid/util/Log;->w(Ljava/lang/String;Ljava/lang/String;)I\n\n    :goto_hook\n    "
+        }
+      ],
+      "debugOnly": true
+    },
+    {
+      "filePath": "smali/com/platform/bdstar/tbox/BdstarTBoxImpl.smali",
+      "operations": [
+        {
+          "type": "replaceBetween",
+          "startMarker": "iput-object v0, p0, Lcom/platform/bdstar/tbox/BdstarTBoxImpl;->mCarApi:Landroid/car/Car;",
+          "endMarker": "return-void",
+          "newContent": "\n\n    :try_start_hook\n    invoke-virtual {v0}, Landroid/car/Car;->connect()V\n    :try_end_hook\n    .catch Ljava/lang/Throwable; {:try_start_hook .. :try_end_hook} :catch_hook\n    goto :goto_hook\n\n    :catch_hook\n    const-string v1, \"BandwaHook\"\n    const-string v2, \"car service unavailable, skip connect\"\n    invoke-static {v1, v2}, Landroid/util/Log;->w(Ljava/lang/String;Ljava/lang/String;)I\n\n    :goto_hook\n    "
+        }
+      ],
+      "debugOnly": true
+    },
+    {
+      "filePath": "smali/com/android/car/manager/CarPropertyManager.smali",
+      "operations": [
+        {
+          "type": "appendToClass",
+          "contentFile": "psa_stopavm.smali",
+          "skipIfContains": ".method public stopAVMDisplay()Z"
+        }
+      ]
+    },
+    {
+      "filePath": "smali/com/cusc/misc/data4g/Data4gImpl.smali",
+      "operations": [
+        {
+          "type": "insertAfterRegisters",
+          "method": ".method private showNetState()V",
+          "contentFile": "psa_d4g_off.smali",
+          "skipIfContains": ":psa_net_off"
+        }
+      ]
+    },
+    {
+      "filePath": "smali/com/cusc/misc/BootReceiver.smali",
+      "operations": [
+        {
+          "type": "appendToClass",
+          "method": "",
+          "contentFile": "psa_boot.smali",
+          "skipIfContains": "static psaBoot("
+        },
+        {
+          "type": "insertAfterRegisters",
+          "method": ".method public onReceive(Landroid/content/Context;Landroid/content/Intent;)V",
+          "contentFile": "psa_boot_ins.smali",
+          "skipIfContains": "# PSA-MARK-BOOT"
+        }
+      ]
+    }
+  ],
+  "injections": [
+    {
+      "class": "Lcom/cusc/misc/MiscApplication;",
+      "method": "onCreate",
+      "proto": "()V",
+      "at": "start",
+      "ops": [
+        {
+          "op": "invoke-static",
+          "callee": "Lcom/bandwa/hook/Hook;->install(Landroid/content/Context;)V",
+          "args": [
+            "p0"
+          ]
+        }
+      ]
+    }
+  ]
+}

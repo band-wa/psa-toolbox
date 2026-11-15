@@ -1,0 +1,11 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# 注入载荷：这些 smali 片段会被原样拼进目标 dex 的 smali，并按 \n 做锚点匹配。
+# 一旦检出成 CRLF，锚点会静默失效（不报错、就是不注入），所以强制 LF。
+app/src/main/assets/modapk/**/*.smali text eol=lf
+app/src/main/assets/modapk/**/config.json text eol=lf
+
+# ota 目录里放的是二进制分发件，禁止任何换行/编码转换
+ota/**/*.apk binary
+ota/**/*.apk -text

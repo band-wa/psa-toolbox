@@ -1,0 +1,39 @@
+*.iml
+.gradle
+/local.properties
+.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+.claude/
+
+# 本地验证产物（APK/截图/解包目录）
+/verify/
+
+# android.car 编译期桩的中间产物（jar 本体入库，class 不入库）
+tools/aosp-car-stub/out/
+
+# Python 虚拟环境（本地测试脚本）
+/.venv/
+
+# hook 模块构建产物
+/hook/build/
+
+# 拆分出的模块构建产物（app/build 由 app/.gitignore 忽略）
+/core/build/
+/ui/build/
+/service/build/
+
+# android-car-boot：构建产物与本地状态
+/tools/android-car-boot/build/
+/tools/android-car-boot/dist/
+/tools/android-car-boot/service/build/
+/tools/android-car-boot/__pycache__/
+
+# android-car-boot 官方 AVD 底座：本机备份、快照与缓存
+/tools/android-car-boot/avd/build/
+/tools/android-car-boot/avd/__pycache__/
+__pycache__/
