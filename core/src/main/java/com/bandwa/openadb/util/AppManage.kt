@@ -42,6 +42,9 @@ object AppManage {
     /** 永远显示「卸载更新」的包：桌面在本机是纯 /system 应用，按原判据不会出这个按钮。 */
     val ALWAYS_UPDATE = setOf("com.android.launcher")
 
+    /** 包名形状校验，用来挡住拼进 shell 的任意串。 */
+    private val PKG_RE = Regex("^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+$")
+
     /** 额外排除（用户点名不显示）。 */
     val EXCLUDE = setOf("com.cusc.theme.style1")
 
@@ -183,8 +186,12 @@ object AppManage {
 
     /** shell 回退：`pm clear --cache-only` / `pm clear`。返回 null = 成功。 */
     fun clearByShell(pkg: String, cacheOnly: Boolean): String? {
-        val cmd = if (cacheOnly) "pm clear --cache-only $pkg" else "pm clear $pkg"
-        val r = ShellUtils.exec(cmd)
+        val args = if (cacheOnly) {
+            listOf("pm", "clear", "--cache-only", pkg)
+        } else {
+            listOf("pm", "clear", pkg)
+        }
+        val r = ShellUtils.execArgs(args)
         val out = r.output.trim()
         val bad = !r.isSuccess || listOf("failure", "error", "exception", "denied", "not found")
             .any { out.contains(it, ignoreCase = true) }
@@ -193,6 +200,7 @@ object AppManage {
 
     /** 清缓存/清数据：先系统隐藏 API，失败再走 shell。返回 null = 成功。 */
     fun clear(ctx: Context, pkg: String, cacheOnly: Boolean): String? {
+        if (!PKG_RE.matches(pkg)) return "包名不合法：$pkg"
         val err = clearHidden(ctx, pkg, cacheOnly)
         if (err == null) return null
         return clearByShell(pkg, cacheOnly)
