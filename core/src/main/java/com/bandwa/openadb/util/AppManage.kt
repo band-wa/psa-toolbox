@@ -45,6 +45,9 @@ object AppManage {
     /** 包名形状校验，用来挡住拼进 shell 的任意串。 */
     private val PKG_RE = Regex("^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+$")
 
+    /** 桌面被改坏就没有桌面可用，任何情况下都不允许清数据/卸载。 */
+    fun isProtected(pkg: String): Boolean = ALWAYS_UPDATE.contains(pkg)
+
     /** 额外排除（用户点名不显示）。 */
     val EXCLUDE = setOf("com.cusc.theme.style1")
 

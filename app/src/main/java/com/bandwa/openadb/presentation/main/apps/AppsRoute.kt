@@ -311,13 +311,16 @@ private fun AppRowItem(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 TextButton(text = "清缓存") { onAction(row, Action.CLEAR_CACHE) }
-                TextButton(text = "清数据") { onAction(row, Action.CLEAR_DATA) }
-                when (AppManage.uninstallKind(row)) {
-                    AppManage.UninstallKind.UPDATE ->
-                        TextButton(text = "卸载更新") { onAction(row, Action.UNINSTALL) }
-                    AppManage.UninstallKind.APP ->
-                        TextButton(text = "卸载") { onAction(row, Action.UNINSTALL) }
-                    AppManage.UninstallKind.NONE -> Unit
+                // 桌面被清数据或卸载就没有桌面可用，只留「清缓存」
+                if (!AppManage.isProtected(row.pkg)) {
+                    TextButton(text = "清数据") { onAction(row, Action.CLEAR_DATA) }
+                    when (AppManage.uninstallKind(row)) {
+                        AppManage.UninstallKind.UPDATE ->
+                            TextButton(text = "卸载更新") { onAction(row, Action.UNINSTALL) }
+                        AppManage.UninstallKind.APP ->
+                            TextButton(text = "卸载") { onAction(row, Action.UNINSTALL) }
+                        AppManage.UninstallKind.NONE -> Unit
+                    }
                 }
             }
         }
