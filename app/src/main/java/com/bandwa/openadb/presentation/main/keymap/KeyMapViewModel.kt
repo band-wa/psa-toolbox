@@ -205,7 +205,7 @@ class KeyMapViewModel @Inject constructor(
             KeyMapRow(
                 "SRC 切源键",
                 "persist.bandwa.src.shortclick",
-                note = "由 com.cusc.media 消费，不是我们注入的类",
+                note = "仅装了改版多媒体才生效（由 com.cusc.media 消费，不是我们注入的类）",
             ),
             // 音乐/地图：短按仍由工具箱的 Hook.launchByProp 执行（它读 .shortclick），
             // 长按由我们的载荷接管 —— psa_handle.smali 里 0x0b / 0x0d 两条分支只在
@@ -215,13 +215,13 @@ class KeyMapViewModel @Inject constructor(
                 "音乐键",
                 "persist.bandwa.music.shortclick",
                 "persist.bandwa.music.longclick",
-                note = "短按由工具箱的 Hook 接管；长按由按键映射的注入层接管",
+                note = "短按由工具箱的 Hook 接管；长按由注入层接管，没注入时回落到原厂默认",
             ),
             KeyMapRow(
                 "地图键",
                 "persist.bandwa.map.shortclick",
                 "persist.bandwa.map.longclick",
-                note = "短按由工具箱的 Hook 接管；长按由按键映射的注入层接管",
+                note = "短按由工具箱的 Hook 接管；长按由注入层接管，没注入时回落到原厂默认",
             ),
             KeyMapRow(
                 "会员中心键（有该按键的车型才有）",
