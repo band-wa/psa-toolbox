@@ -29,6 +29,7 @@ import com.bandwa.openadb.receiver.CarlifeBroadcastReceiver
 import com.bandwa.openadb.receiver.CarlifeBroadcastSender
 import com.bandwa.openadb.receiver.HicarBroadcastReceiver
 import com.bandwa.openadb.receiver.HicarBroadcastSender
+import com.bandwa.openadb.util.AutoClean
 import com.bandwa.openadb.util.CarGateway
 import com.bandwa.openadb.service.ToolBoxServiceWrapper.Companion.ACTION_START_PROXY_AIR_CONDITION
 import com.bandwa.openadb.service.ToolBoxServiceWrapper.Companion.ACTION_STOP_PROXY_AIR_CONDITION
@@ -300,6 +301,7 @@ class PSAToolBoxService : Service() {
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private fun init() {
+        AutoClean.start(this, serviceScope)
         try {
             serviceScope.launch(Dispatchers.IO) {
                 if (shouldHookHvac) {
