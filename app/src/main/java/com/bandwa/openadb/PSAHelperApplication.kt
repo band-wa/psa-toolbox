@@ -1,6 +1,7 @@
 package com.bandwa.openadb
 
 import android.app.Application
+import com.bandwa.openadb.util.CrashCollect
 import com.bandwa.openadb.util.Utils.PREFS_NAME
 import com.bandwa.openadb.util.apk.ApkDownloader
 import com.umeng.commonsdk.UMConfigure
@@ -16,6 +17,13 @@ class PSAHelperApplication : Application() {
 
         CoroutineScope(Dispatchers.IO).launch {
             ApkDownloader.cleanupDownloads(this@PSAHelperApplication)
+        }
+
+        // 未捕获异常只落盘，随后原样交回上一个处理器，不改变崩溃行为
+        runCatching { CrashCollect.installHandler(this) }
+
+        CoroutineScope(Dispatchers.IO).launch {
+            runCatching { CrashCollect.autoCollect(this@PSAHelperApplication) }
         }
 
         val sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
