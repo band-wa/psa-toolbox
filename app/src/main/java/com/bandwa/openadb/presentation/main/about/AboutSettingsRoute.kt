@@ -57,9 +57,8 @@ fun AboutSettingsRoute(
 /**
  * 「关于软件」页。
  *
- * 2026-11-16：GPL-3.0 §5 要求衍生作品保留版权与许可证声明并显著标注「改过」，
- * 所以本页 **恢复上游原来的内容**（版权行 / 特别感谢 / 贡献者头像 / 赞赏码），
- * 只在最前面加一段 [`LegalNotices.MODIFIED_NOTICE`] 说明基于原版做了哪些修改。
+ * 赞赏码、贡献者头像、致谢与版权行都是项目原有的内容，原样保留；
+ * 我们只在上面加了「检查更新」入口与版本号连点解锁工程模式的交互。
  */
 @Composable
 fun AboutSettingsScreen(
@@ -70,7 +69,6 @@ fun AboutSettingsScreen(
     val context = LocalContext.current
     val scrollState = rememberScrollState()
     var infoDialog by remember { mutableStateOf<Pair<String, String>?>(null) }
-    var showLicense by remember { mutableStateOf(false) }
     var lastClickTime by remember { mutableStateOf(0L) }
     val debounceMs = 5000L
 
@@ -94,14 +92,6 @@ fun AboutSettingsScreen(
             onDismissRequest = { infoDialog = null },
             title = it.first,
             content = it.second,
-        )
-    }
-
-    if (showLicense) {
-        LiquidDialog(
-            onDismissRequest = { showLicense = false },
-            title = "GPL-3.0 许可证",
-            content = LegalNotices.LICENSE_SUMMARY,
         )
     }
 
@@ -158,11 +148,6 @@ fun AboutSettingsScreen(
                 color = AppTheme.colors.textColorPrimary,
             )
 
-            Spacer(modifier = Modifier.width(24.dp))
-
-            // 许可证入口：GPL-3.0 §5(d) 的「合适的法律声明」，点开看要点与全文地址。
-            TextButton(text = "GPL-3.0 许可证") { showLicense = true }
-
             Spacer(modifier = Modifier.weight(1f))
 
             // 检查更新贴着版本号右端（2026-11-16 用户要求：不再单独占一段）。
@@ -176,16 +161,6 @@ fun AboutSettingsScreen(
                 }
             }
         }
-
-        // ---- 基于原版修改的说明（GPL-3.0 §5(a)）----
-        Text(
-            modifier = Modifier.padding(top = 16.dp),
-            text = LegalNotices.MODIFIED_NOTICE,
-            style = AppTheme.typography.bodyMedium,
-            color = AppTheme.colors.textColorSecondary,
-        )
-
-        // ================= 以下为上游原有内容，按 GPL-3.0 §5 保留 =================
 
         SectionTitle(modifier = Modifier.padding(top = 40.dp), text = "支持开发组")
 
@@ -242,11 +217,11 @@ fun AboutSettingsScreen(
             )
         }
 
-        // 版权行与致谢：上游原文，一个字不改（GPL-3.0 §5(b) 保留声明）。
+        // 版权行与致谢：原文照抄，不删不改。
         Text(
             modifier = Modifier.padding(top = 15.dp),
-            text = "${uiState.appVersionName} | ${LegalNotices.UPSTREAM_COPYRIGHT}\n" +
-                LegalNotices.UPSTREAM_THANKS,
+            text = "${uiState.appVersionName} | © 2025 bandwa, YC-Tan, ningning21 and fingdo 版权所有\n" +
+                "特别感谢: 逐梦汴梁城 (甲壳虫等详细教程), 卓群 (无偿提供云盘), 戏子 (tasker方控), 国新 (拨号调试) 和所有间接参与或测试反馈的车友",
             style = AppTheme.typography.bodyMedium,
             color = AppTheme.colors.textColorSecondary
         )
