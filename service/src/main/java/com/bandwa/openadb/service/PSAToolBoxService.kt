@@ -41,6 +41,8 @@ import com.bandwa.openadb.util.Utils.getSystemProp
 import com.bandwa.openadb.util.IndependentDisplayPresentation
 import com.bandwa.openadb.util.GestureBarController
 import com.bandwa.openadb.util.HookState
+import com.bandwa.openadb.util.PsaExt
+import com.bandwa.hook.Hook
 import com.bandwa.openadb.util.KeyInjector.sendKeyDownUpSync
 import com.bandwa.openadb.util.VideoViewPresentation
 import com.bandwa.openadb.presentation.overlay.FuelAmountOverlay
@@ -136,6 +138,12 @@ class PSAToolBoxService : Service() {
 
 
     private var rightBtnPressDownTime = 0L
+
+    private var mediaBtnPressDownTime = 0L
+    private var mapBtnPressDownTime = 0L
+
+    private var mediaJob: Job? = null
+    private var mapJob: Job? = null
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
@@ -662,13 +670,63 @@ class PSAToolBoxService : Service() {
                 }
             }
 
-            // 音乐键(0x0b)/地图键(0x0d) 的长按已改由按键映射的注入层接管
-            // （psa_handle.smali 的 :psa_r9 / :psa_r10 读 .longclick），
-            // 这里再放一份会让长按被启动两次。
+            // 音乐键(0x0b)/地图键(0x0d)：注入层打过补丁且用户配了值时长按由
+            // psa_handle.smali 的 :psa_r9 / :psa_r10 处理，这里让位；其余情况（没注入、
+            // 注入失败、属性没配过）由下面的分支兜底，否则长按完全没反应。
+            "11" -> handleMediaLongPress(action, isMedia = true)
+
+            "13" -> handleMediaLongPress(action, isMedia = false)
 
         }
     }
 
+
+    /**
+     * 音乐/地图键的长按兜底：按下起延时 2 秒，抬起早于 2 秒就取消。
+     *
+     * @param action "0" = 按下，"1" = 抬起
+     * @param isMedia true = 音乐键(0x0b)，false = 地图键(0x0d)
+     */
+    private fun handleMediaLongPress(action: String, isMedia: Boolean) {
+        val prop = if (isMedia) "persist.bandwa.music.longclick" else "persist.bandwa.map.longclick"
+        val fallback = if (isMedia) defaultMediaPkgName else "com.autonavi.amapauto"
+
+        // 注入层在场且用户配了具体目标 ⇒ 长按已经在 misc 里启动过了
+        val raw = getSystemProp(prop)
+        val injected = HookState.versionOf(PsaExt.PKG_MISC) == Hook.VERSION
+        if (raw == "none" || (injected && raw.isNotEmpty())) return
+
+        if (action == "0") {
+            if (isMedia) {
+                mediaBtnPressDownTime = System.currentTimeMillis()
+                mediaJob?.cancel()
+                mediaJob = serviceScope.launch {
+                    delay(2000)
+                    launchByPropOr(prop, fallback)
+                }
+            } else {
+                mapBtnPressDownTime = System.currentTimeMillis()
+                mapJob?.cancel()
+                mapJob = serviceScope.launch {
+                    delay(2000)
+                    launchByPropOr(prop, fallback)
+                }
+            }
+        } else {
+            val held = System.currentTimeMillis() -
+                (if (isMedia) mediaBtnPressDownTime else mapBtnPressDownTime)
+            if (held < 2000) {
+                if (isMedia) mediaJob?.cancel() else mapJob?.cancel()
+            }
+        }
+    }
+
+    private fun launchByPropOr(prop: String, fallback: String) {
+        val raw = getSystemProp(prop)
+        val pkg = if (raw.isEmpty() || raw == "none") fallback else raw
+        val intent = packageManager.getLaunchIntentForPackage(pkg) ?: return
+        runCatching { startActivity(intent) }
+    }
 
     private fun simulateMediaPreviousKeyPress() {
         if (!isDefaultMediaPlay()) {
