@@ -31,7 +31,7 @@ PSA 工具箱是一个运行在标致 / 雪铁龙车机（Android 9）上的系�
 
 > 本项目以 GPL-3.0 开源，早期版本由 [bandwa](https://github.com/band-wa/psa-toolbox) 等作者开发。
 > 我们在原有 9 个模块之外**新增了「按键映射」「应用管理」两个页面**，并把按键映射的注入载荷
-> 并入工具箱原有的「修复PSA工具箱」链路。改动清单见 [docs/修改说明.md](docs/修改说明.md)。
+> 并入工具箱原有的「修复PSA工具箱」链路。
 
 工具箱包含 11 个功能模块：
 
@@ -44,7 +44,7 @@ PSA 工具箱是一个运行在标致 / 雪铁龙车机（Android 9）上的系�
 | **按键映射** | 13 个键位（灯杆顶端 / 蓝牙电话 / 方向盘语音 / SRC / 空调 / 车辆设置 / 蓝牙钢琴 / 手机互联 / 音乐 / 地图 / LIST / 会员中心 / 车机设置）的单击与长按自定义启动应用，两列卡片布局，选应用按系统应用/第三方应用的规则过滤 |
 | **仪表投屏** | 镜像投屏、独立副屏应用投屏、画面位置 / 缩放调整、开机自动投屏、右滚轮长按快捷开关 |
 | **油耗账本** | 加油自动识别（VHAL 油量 / 里程）、悬浮窗金额录入、手动补录、百公里油耗、每公里油费、油箱容量设置 |
-| **应用管理** | 列出车机自带关键应用与已装第三方应用，点行展开清缓存 / 清数据 / 卸载（更新），扫码无线安装 APK |
+| **应用管理** | 列出车机自带关键应用与已装第三方应用，点行展开清缓存 / 清数据 / 卸载（更新），扫码无线安装 APK，也可以一键安装沙发管家作为应用市场 |
 | **维护诊断** | 车况只读展示（VIN / 总里程 / 油量 / 续航 / 瞬时油耗 / 转角 / 车速 / 档位）、仅解锁后备箱、重载 U 盘、存储清理与白名单、内存清理与名单、崩溃与诊断包、核心件修复 |
 | **专家模式** | 兼容模式、新装应用自动赋权、MTK 日志开关、开机脚本、开机自启动管理（可选「不进界面」后台唤醒）、工程模式入口 |
 | **关于软件** | 版本信息、检查更新、版权与致谢、贡献者、赞赏码 |
@@ -65,7 +65,7 @@ PSA 工具箱是一个运行在标致 / 雪铁龙车机（Android 9）上的系�
 | --- | --- |
 | 平台 | Android 9（API 28）为目标设备；`minSdk 24`、`targetSdk 25`、`arm64-v8a` |
 | 语言 / UI | Kotlin 1.9.25、Jetpack Compose（Material 3）、自研液态玻璃组件 |
-| 架构 | 多模块（`:app` / `:core` / `:ui` / `:service` / `:hook`）、单 Activity + 9 Tab、MVI（UIState + StateFlow）、Hilt、Coroutines / Flow |
+| 架构 | 多模块（`:app` / `:core` / `:ui` / `:service` / `:hook`）、单 Activity + 11 Tab、MVI（UIState + StateFlow）、Hilt、Coroutines / Flow |
 | 车控 | `android.car` `CarPropertyManager`（进程内单连接网关 + 订阅重放），编译期使用 clean-room 桩；[官方 AVD 底座](tools/android-car-boot/README.md) 注入真实 `android.car` + 系统 CarService，运行时 parent-first 覆盖桩、直接走真实链路 |
 | 系统集成 | Bootclasspath 注入：把 `android.car` 客户端放进 boot class path、`com.android.car` 服务端装为系统应用。底座为 Google 官方 Android 9 userdebug AVD（替换 bootclasspath jar + 删 boot image 槽位的最小机制）；仅测试模拟器，真车勿装 |
 | 热补丁 | google/smali 3.0.10（dexlib2 / baksmali）、zipflinger 零拷贝重打包、apksig v2 签名 |
@@ -77,7 +77,7 @@ PSA 工具箱是一个运行在标致 / 雪铁龙车机（Android 9）上的系�
 
 ```
 psa-toolbox/
-├── app/                              # 应用壳：Application、MainActivity、9 个 Tab 的 feature 包
+├── app/                              # 应用壳：Application、MainActivity、11 个 Tab 的 feature 包
 │   └── src/main/
 │       ├── assets/modapk/            # 原厂核心件的补丁配置（config.json）
 │       ├── assets/                   # 上传页、运行时签名 keystore、提示音
@@ -254,8 +254,7 @@ Copyright (C) 2023-2026 bandwa contributors
 
 - **2026-11-16**：新增「按键映射」「应用管理」两个页面；把按键映射的注入载荷并入「修复PSA工具箱」链路；
   界面重做（菜单分组、四级字号、深浅双主题）；拆除大面积阴影修掉滑动掉帧；开机拉起可选不进界面。
-  完整清单见 [docs/修改说明.md](docs/修改说明.md)。
-- **改动记录**：本 README 的本节与 [docs/修改说明.md](docs/修改说明.md)。
+- **改动记录**：本 README 的本节。
 - **原版权声明**：`© 2025 bandwa, YC-Tan, ningning21 and fingdo 版权所有`（原样保留在 App 关于页）。
 
 ## 免责声明

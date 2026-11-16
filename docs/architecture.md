@@ -1,6 +1,6 @@
 # 架构说明
 
-> 适用版本：v5.3.4（改动见 [修改说明.md](修改说明.md)）。本文描述仓库**当前真实状态**。
+> 适用版本：v5.3.4。本文描述仓库**当前真实状态**。
 > 维护约定：新增/删除模块、移动顶层包、调整模块依赖时，同步更新本文。
 
 ## 1. 模块总览
@@ -9,7 +9,7 @@
 
 | 模块 | namespace | 类型 | 职责 | 依赖 |
 | --- | --- | --- | --- | --- |
-| `:app` | `com.bandwa.openadb` | application | 壳：`PSAHelperApplication`、`MainActivity`、9 个 Tab 的 feature 与 ViewModel；Manifest、DI 根、assets、签名 | `:core` `:ui` `:service` `:hook` |
+| `:app` | `com.bandwa.openadb` | application | 壳：`PSAHelperApplication`、`MainActivity`、11 个 Tab 的 feature 与 ViewModel；Manifest、DI 根、assets、签名 | `:core` `:ui` `:service` `:hook` |
 | `:core` | `com.bandwa.openadb.core` | library | 无 UI 的通用能力：系统/进程/shell、车控网关、油耗账本、APK 下载与校验、smali/dex 补丁工具、hook 状态、实体类 | `:hook` |
 | `:ui` | `com.bandwa.openadb.ui` | library | Compose 主题、颜色/形状/字体、通用组件、通用弹窗、预览；功能图标资源 | `:core` |
 | `:service` | `com.bandwa.openadb.service` | library | 常驻前台服务、广播接收、无障碍、悬浮窗 overlay、安装器、AIDL bridge、服务侧 DI | `:core` `:ui` `:hook` |
@@ -38,9 +38,9 @@
 
 ### `:app` —— 壳 + feature
 
-- 唯一 application 模块。`MainActivity.kt` 在 `presentation/main/`，单 Activity 承载 9 个 Tab（Compose，无 Fragment）。
+- 唯一 application 模块。`MainActivity.kt` 在 `presentation/main/`，单 Activity 承载 11 个 Tab（Compose，无 Fragment）。
 - 每个业务 feature 固定三件套：`XxxRoute.kt`（Compose 路由/入口）、`XxxUIState.kt`（状态与事件类型）、`XxxViewModel.kt`（`@HiltViewModel` + `@Inject` 构造）。
-- 现有 10 个 feature 包（`app/src/main/java/com/bandwa/openadb/presentation/main/`）：`about`、`binding`、`expert`、`fuel`、`music`、`navi`、`person`、`projection`、`system`、`tools`。其中 `binding` 是音乐/导航共用的按键绑定区块，不单独占 Tab。
+- 现有 12 个 feature 包（`app/src/main/java/com/bandwa/openadb/presentation/main/`）：`about`、`apps`、`binding`、`expert`、`fuel`、`keymap`、`music`、`navi`、`person`、`projection`、`system`、`tools`。其中 `binding` 是音乐/导航共用的按键绑定区块，不单独占 Tab —— 所以 12 个包对应 11 个 Tab。
 - 壳层文件：`PSAHelperApplication.kt`（根包，`@HiltAndroidApp`）、`di/ApplicationModule.kt`。
 
 ### `:core` —— 纯业务与系统能力
@@ -119,7 +119,7 @@ gradlew :hook:hookDex                           :: 只重建 hook.dex
 gradlew :service:testDebugUnitTest -Dpatch.fixtures=<目录> -Dpatch.fixtures.limit=<n>
 ```
 
-- 单测现状：`:core` 只有 `ApkDownloaderTest`；`:service` 有 `HvacWindowEventHubTest` 与 `PatchRegressionTest`（补丁回归，靠 `-Dpatch.fixtures` 提供样本，`:core`/`:service` 的 Test 任务已 `dependsOn(":hook:hookDex")` 并配 4g 堆）；`:app/src/test` 目前是空目录，`:app:testDebugUnitTest` 只是保持 CI 地位，没有用例。
+- 单测现状：`:core` 只有 `ApkDownloaderTest`；`:service` 有 `HvacWindowEventHubTest`、`PatchRegressionTest`（补丁回归，靠 `-Dpatch.fixtures` 提供样本）与 `PsaKeyMapPackTest`（按键映射注入自证，靠 `-Dpsa.apk`/`-Dpsa.out` 提供真实原包）；两个靠样本的用例都在未提供样本时 `assumeTrue` 跳过（`:core`/`:service` 的 Test 任务已 `dependsOn(":hook:hookDex")` 并配 4g 堆）；`:app/src/test` 目前是空目录，`:app:testDebugUnitTest` 只是保持 CI 地位，没有用例。
 
 ### hook.dex 生成与同步链路
 
