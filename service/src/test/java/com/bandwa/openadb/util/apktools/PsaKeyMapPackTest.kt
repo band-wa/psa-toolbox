@@ -149,7 +149,8 @@ class PsaKeyMapPackTest {
     } == true
 
     private fun File.readBytes0(entryName: String): ByteArray = ZipFile(this).use { zip ->
-        zip.getInputStream(zip.getEntry(entryName)).use { it.readBytes() }
+        val entry = zip.getEntry(entryName) ?: throw AssertionError("$this 里没有 $entryName")
+        zip.getInputStream(entry).use { it.readBytes() }
     }
 
     private fun classHasText(cls: ClassDef, text: String): Boolean {
