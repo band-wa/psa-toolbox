@@ -109,8 +109,12 @@ class AppsViewModel @Inject constructor(
 
     fun refresh() = viewModelScope.launch {
         _uiState.update { it.copy(scanning = true) }
-        val rows = withContext(Dispatchers.IO) { AppManage.scan(context) }
-        _uiState.update { it.copy(rows = AppManage.sort(rows, it.sort), scanning = false) }
+        try {
+            val rows = withContext(Dispatchers.IO) { AppManage.scan(context) }
+            _uiState.update { it.copy(rows = AppManage.sort(rows, it.sort)) }
+        } finally {
+            _uiState.update { it.copy(scanning = false) }
+        }
     }
 
     fun setSort(by: AppManage.Sort) {
@@ -121,14 +125,16 @@ class AppsViewModel @Inject constructor(
     fun clear(row: AppEntry, cacheOnly: Boolean) = viewModelScope.launch {
         val what = if (cacheOnly) "缓存" else "数据"
         _uiState.update { it.copy(busyPkg = row.pkg, busyText = "正在清除${row.label}的$what…") }
-        val err = withContext(Dispatchers.IO) { AppManage.clear(context, row.pkg, cacheOnly) }
-        _uiState.update {
-            it.copy(
-                busyPkg = null,
-                busyText = "",
-                // 注意：中文也是合法标识符字符，`$what已清除` 会被当成变量名 ⇒ 必须用 ${'$'}{what}
-                message = if (err == null) "${row.label}的$what 已清除" else "清除失败：$err",
-            )
+        try {
+            val err = withContext(Dispatchers.IO) { AppManage.clear(context, row.pkg, cacheOnly) }
+            _uiState.update {
+                it.copy(
+                    // 注意：中文也是合法标识符字符，`$what已清除` 会被当成变量名 ⇒ 必须用 ${'$'}{what}
+                    message = if (err == null) "${row.label}的$what 已清除" else "清除失败：$err",
+                )
+            }
+        } finally {
+            _uiState.update { it.copy(busyPkg = null, busyText = "") }
         }
     }
 
@@ -141,26 +147,22 @@ class AppsViewModel @Inject constructor(
                 busyText = if (asUpdate) "正在卸载${row.label}的更新…" else "正在卸载${row.label}…",
             )
         }
-        val ok = withContext(Dispatchers.IO) { ApkInstaller.uninstall(context, row.pkg) }
-        if (ok) {
-            // 卸载完包信息变了，重新扫一遍
-            val rows = withContext(Dispatchers.IO) { AppManage.scan(context) }
-            _uiState.update {
-                it.copy(
-                    rows = AppManage.sort(rows, it.sort),
-                    busyPkg = null,
-                    busyText = "",
-                    message = if (asUpdate) "${row.label}的更新已卸载" else "${row.label}已卸载",
-                )
+        try {
+            val ok = withContext(Dispatchers.IO) { ApkInstaller.uninstall(context, row.pkg) }
+            if (ok) {
+                // 卸载完包信息变了，重新扫一遍
+                val rows = withContext(Dispatchers.IO) { AppManage.scan(context) }
+                _uiState.update {
+                    it.copy(
+                        rows = AppManage.sort(rows, it.sort),
+                        message = if (asUpdate) "${row.label}的更新已卸载" else "${row.label}已卸载",
+                    )
+                }
+            } else {
+                _uiState.update { it.copy(message = if (asUpdate) "卸载更新失败" else "卸载失败") }
             }
-        } else {
-            _uiState.update {
-                it.copy(
-                    busyPkg = null,
-                    busyText = "",
-                    message = if (asUpdate) "卸载更新失败" else "卸载失败",
-                )
-            }
+        } finally {
+            _uiState.update { it.copy(busyPkg = null, busyText = "") }
         }
     }
 
