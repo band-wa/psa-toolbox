@@ -6,6 +6,7 @@ import android.os.Environment
 import android.os.StatFs
 import android.util.Log
 import java.io.File
+import java.nio.file.Files
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -49,9 +50,6 @@ object StorageClean {
 
     /** ✅ 白名单：只清这几个子目录的**内容**（目录本身保留）。 */
     private val KW_CLEAR = listOf("playcache", "xlog", "log", "offlinelog", "crash")
-
-    /** ⛔ 黑名单：用户下载的歌 / 用户配置 —— **永远**不进删除路径。 */
-    private val KW_NEVER = listOf("Song", "setting", "config", "Cache", "tencentcache")
 
     private const val KEEP_CRASH_FILES = 20
     private const val KEEP_CRASH_BYTES = 12L * 1024L * 1024L
@@ -220,7 +218,6 @@ object StorageClean {
             var dirs = 0
             var freed = 0L
             for (name in KW_CLEAR) {
-                if (isNever(name)) continue
                 val d = File(root, name)
                 if (!d.isDirectory) continue
                 val b0 = dirBytes(d)
@@ -335,8 +332,17 @@ object StorageClean {
 
     /* ---------------- 深度清理（不用 root） ---------------- */
 
+    /** 崩溃类产物的文件名特征：tombstone / anr / 各类 bugreport / 应用崩溃日志。 */
+    private fun isCrashArtifact(name: String): Boolean {
+        val n = name.lowercase()
+        return n.startsWith("tombstone") || n.startsWith("anr") || n.startsWith("native_crash") ||
+            n.startsWith("bugreport") || n.startsWith("system_app_crash") ||
+            n.startsWith("system_server_crash") || n.startsWith("app_crash") ||
+            n.endsWith(".crash") || n.startsWith("log_temp")
+    }
+
     /**
-     * 用 Java API 直接清 `system:system` 的那几个目录，**不经 su**。
+     * 用 Java API 直接清 `system:system` 的那几个目录，**不经 su**。只删崩溃类产物。
      *
      * @return 删掉的字节数；每条明细写进 [rlog]
      */
@@ -357,6 +363,8 @@ object StorageClean {
                 var one = 0L
                 var n = 0
                 for (k in kids) {
+                    // 只动崩溃类产物：这几个目录里可能有厂商放的其它运行数据，整目录清空会误删
+                    if (!isCrashArtifact(k.name)) continue
                     val sz = sizeOf(k)
                     if (deleteRec(k)) {
                         one += sz
@@ -393,12 +401,6 @@ object StorageClean {
         return n
     }
 
-    /** 名字是否命中黑名单（大小写不敏感）。 */
-    fun isNever(name: String?): Boolean {
-        if (name == null) return true
-        return KW_NEVER.any { it.equals(name, ignoreCase = true) }
-    }
-
     /** 是不是"可以清的 cache 目录"：必须以 `/cache` 结尾、不含禁段、不含 `..`、且真是目录。 */
     fun isCacheOnly(d: File?): Boolean {
         if (d == null) return false
@@ -415,21 +417,36 @@ object StorageClean {
         0L
     }
 
-    fun deleteRec(f: File): Boolean = try {
-        if (f.isDirectory) f.listFiles()?.forEach { deleteRec(it) }
-        f.delete()
+    /** 删除文件或整棵目录。符号链接只删链接本身，绝不顺着链接删到别处去。 */
+    fun deleteRec(f: File): Boolean {
+        return try {
+            if (isSymlink(f)) {
+                f.delete()
+            } else {
+                if (f.isDirectory) f.listFiles()?.forEach { deleteRec(it) }
+                f.delete()
+            }
+        } catch (t: Throwable) {
+            false
+        }
+    }
+
+    private fun isSymlink(f: File): Boolean = try {
+        Files.isSymbolicLink(f.toPath())
     } catch (t: Throwable) {
         false
     }
 
     /** 递归清一个目录里的文件（保留目录本身），返回释放的字节数。 */
     fun clearDir(dir: File?): Long {
-        if (dir == null || !dir.isDirectory) return 0L
+        if (dir == null || !dir.isDirectory || isSymlink(dir)) return 0L
         val fs = dir.listFiles() ?: return 0L
         var freed = 0L
         for (f in fs) {
             try {
-                if (f.isDirectory) {
+                if (isSymlink(f)) {
+                    f.delete()
+                } else if (f.isDirectory) {
                     freed += clearDir(f)
                     f.delete()
                 } else {
