@@ -109,7 +109,10 @@ fun MemGuardSection(topPad: Dp = 32.dp) {
     }
 
     if (editList) {
-        val all = remember { memCleanCandidates(context) }
+        var all by remember { mutableStateOf<List<AppInfo>>(emptyList()) }
+        LaunchedEffect(Unit) {
+            all = withContext(Dispatchers.IO) { memCleanCandidates(context) }
+        }
         AppPickerTwoPane(
             title = "内存清理名单",
             hint = "右边这些应用会在自动清理时被结束进程（前台正在用的不会被清）。" +
@@ -428,15 +431,19 @@ fun BootWifiSection(topPad: Dp = 32.dp) {
 @Composable
 fun DiagReportSection(topPad: Dp = 32.dp) {
     val context = LocalContext.current
-    var summary by remember { mutableStateOf(CrashCollect.summary(context)) }
+    var summary by remember { mutableStateOf("") }
     var lastResult by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        summary = withContext(Dispatchers.IO) { CrashCollect.summary(context) }
+    }
 
     LaunchedEffect(busy) {
         if (!busy) return@LaunchedEffect
         val r = withContext(Dispatchers.IO) { CrashCollect.collect(context, force = true) }
         lastResult = r
-        summary = CrashCollect.summary(context)
+        summary = withContext(Dispatchers.IO) { CrashCollect.summary(context) }
         busy = false
     }
 
