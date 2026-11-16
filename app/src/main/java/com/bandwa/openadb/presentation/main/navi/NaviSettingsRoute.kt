@@ -20,9 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.bandwa.openadb.component.PageTitle
 import com.bandwa.openadb.component.SelectionText
 import com.bandwa.openadb.component.TextButton
-import com.bandwa.openadb.presentation.main.binding.AppKeyBindingSection
 import com.bandwa.openadb.presentation.ui.AppTheme
 import com.bandwa.openadb.presentation.ui.LiquidDialog
 import com.bandwa.openadb.presentation.ui.PSAHelperThemePreview
@@ -36,9 +36,6 @@ fun NaviSettingsRoute(
 
     NaviSettingsScreen(
         uiState = uiState,
-        onRequestInstalledApps = viewModel::loadInstalledApps,
-        onSelectShortClickApp = viewModel::selectShortClickApp,
-        onSelectLongClickApp = viewModel::selectLongClickApp,
         onActivateAmap = viewModel::activateAmap,
     )
 }
@@ -46,9 +43,6 @@ fun NaviSettingsRoute(
 @Composable
 fun NaviSettingsScreen(
     uiState: NaviSettingsUIState,
-    onRequestInstalledApps: () -> Unit,
-    onSelectShortClickApp: (String) -> Unit,
-    onSelectLongClickApp: (String) -> Unit,
     onActivateAmap: () -> Unit,
 ) {
     val scrollState = rememberScrollState()
@@ -82,11 +76,13 @@ fun NaviSettingsScreen(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 32.dp)
-            .padding(top = 40.dp, bottom = 20.dp)
+            .padding(top = 24.dp, bottom = 20.dp)
             .verticalScroll(scrollState)
     ) {
+        PageTitle(text = "导航助手")
+
         SelectionText(
-            modifier = Modifier.wrapContentSize(),
+            modifier = Modifier.padding(top = 28.dp).wrapContentSize(),
             text = "高德签名冲突检测，点击右边圆点查看说明",
             showInfoButton = true,
             infoClickListen = {
@@ -97,14 +93,14 @@ fun NaviSettingsScreen(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = "高德签名检测",
-                style = AppTheme.typography.titleLarge,
+                style = AppTheme.typography.titleMedium,
                 color = AppTheme.colors.textColorPrimary
             )
             Spacer(modifier = Modifier.width(20.dp))
             uiState.isAmapSafe?.let { safe ->
                 val text = if (safe) "正常" else "异常，请勿长按桌面卸载高德，否则必砖！"
                 val color = if (safe) AppTheme.colors.textColorSuccess else AppTheme.colors.textColorError
-                Text(text = text, style = AppTheme.typography.titleLarge, color = color)
+                Text(text = text, style = AppTheme.typography.titleMedium, color = color)
             }
         }
 
@@ -115,14 +111,7 @@ fun NaviSettingsScreen(
             showActivationConfirm = true
         }
 
-        AppKeyBindingSection(
-            shortClickTitle = "短按导航按键启动APP",
-            longClickTitle = "长按导航按键启动APP",
-            binding = uiState.binding,
-            onRequestInstalledApps = onRequestInstalledApps,
-            onSelectShortClickApp = onSelectShortClickApp,
-            onSelectLongClickApp = onSelectLongClickApp,
-        )
+        // 导航按键的绑定已合并到「按键映射」页统一管理（2026-11-16）。
     }
 }
 
@@ -132,9 +121,6 @@ fun NaviSettingsScreenPreview() {
     PSAHelperThemePreview {
         NaviSettingsScreen(
             uiState = NaviSettingsUIState(),
-            onRequestInstalledApps = {},
-            onSelectShortClickApp = {},
-            onSelectLongClickApp = {},
             onActivateAmap = {},
         )
     }

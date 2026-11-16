@@ -1,113 +1,70 @@
 package com.bandwa.openadb.presentation.main.binding
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.bandwa.openadb.component.SelectionText
-import com.bandwa.openadb.component.TextButton
-import com.bandwa.openadb.entity.MusicPlayer
-import com.bandwa.openadb.presentation.dialog.PlayerSelectDialog
-import com.bandwa.openadb.presentation.ui.AppTheme
-import com.bandwa.openadb.presentation.ui.LocalThemeManager
-import com.google.accompanist.drawablepainter.rememberDrawablePainter
+import com.bandwa.openadb.presentation.dialog.AppPickDialog
+import com.bandwa.openadb.presentation.main.keymap.KeyMapCard
+import com.bandwa.openadb.presentation.main.keymap.KeyMapRow
 
+/**
+ * 一个按键的「单击 / 长按」绑定块：一张卡片 + 选应用弹窗。
+ *
+ * 与「按键映射」页共用 [KeyMapCard] 与 [AppPickDialog] —— 三处界面完全一致，
+ * 只是属性名不同（音乐 `persist.bandwa.music.*`、地图 `persist.bandwa.map.*`）。
+ */
 @Composable
 fun AppKeyBindingSection(
-    shortClickTitle: String,
-    longClickTitle: String,
+    title: String,
     binding: AppKeyBindingState,
     onRequestInstalledApps: () -> Unit,
     onSelectShortClickApp: (String) -> Unit,
     onSelectLongClickApp: (String) -> Unit,
     modifier: Modifier = Modifier,
+    hasLong: Boolean = true,
 ) {
-    var showShortClickDialog by remember { mutableStateOf(false) }
-    var showLongClickDialog by remember { mutableStateOf(false) }
+    var editingLong by remember { mutableStateOf<Boolean?>(null) }
 
-    Column(modifier = modifier) {
-        BindingRow(
-            title = shortClickTitle,
-            buttonText = "选择短按APP",
-            app = binding.shortClickApp,
-            onClick = {
+    Column(modifier = modifier.padding(top = 32.dp)) {
+        KeyMapCard(
+            // longProp 只用来表示「这一行有没有长按」，不参与读写（属性名在 ViewModel 里）。
+            row = KeyMapRow(
+                name = title,
+                shortProp = "",
+                longProp = if (hasLong) "" else null,
+                shortApp = binding.shortClickApp,
+                longApp = binding.longClickApp,
+            ),
+            onPickShort = {
                 onRequestInstalledApps()
-                showShortClickDialog = true
+                editingLong = false
             },
-        )
-        BindingRow(
-            title = longClickTitle,
-            buttonText = "选择长按APP",
-            app = binding.longClickApp,
-            onClick = {
+            onPickLong = {
                 onRequestInstalledApps()
-                showLongClickDialog = true
+                editingLong = true
             },
         )
     }
 
-    if (showShortClickDialog) {
-        PlayerSelectDialog(
-            themeManager = LocalThemeManager.current,
-            onDismissRequest = { showShortClickDialog = false },
-            onSelect = {
-                onSelectShortClickApp(it)
-                showShortClickDialog = false
+    editingLong?.let { isLong ->
+        AppPickDialog(
+            title = (if (isLong) "长按" else "单击") + " - " + title,
+            apps = binding.installedApps,
+            onDismissRequest = { editingLong = null },
+            onSelect = { value ->
+                if (isLong) onSelectLongClickApp(value) else onSelectShortClickApp(value)
+                editingLong = null
             },
-            players = binding.installedApps.toMutableList(),
-        )
-    }
-
-    if (showLongClickDialog) {
-        PlayerSelectDialog(
-            themeManager = LocalThemeManager.current,
-            onDismissRequest = { showLongClickDialog = false },
-            onSelect = {
-                onSelectLongClickApp(it)
-                showLongClickDialog = false
+            onClear = {
+                if (isLong) onSelectLongClickApp("none") else onSelectShortClickApp("none")
+                editingLong = null
             },
-            players = binding.installedApps.toMutableList(),
         )
-    }
-}
-
-@Composable
-private fun BindingRow(
-    title: String,
-    buttonText: String,
-    app: MusicPlayer?,
-    onClick: () -> Unit,
-) {
-    SelectionText(
-        modifier = Modifier.padding(top = 32.dp),
-        text = title,
-    )
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        TextButton(text = buttonText) { onClick() }
-        app?.let {
-            Image(
-                modifier = Modifier
-                    .padding(start = 32.dp)
-                    .size(48.dp),
-                painter = rememberDrawablePainter(drawable = it.iconRes),
-                contentDescription = title,
-            )
-            Text(
-                modifier = Modifier.padding(start = 16.dp),
-                text = it.name,
-                style = AppTheme.typography.titleLarge,
-                color = AppTheme.colors.textColorSecondary,
-            )
-        }
     }
 }

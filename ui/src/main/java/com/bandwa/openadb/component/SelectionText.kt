@@ -27,7 +27,7 @@ fun SelectionText(
     ) {
         Text(
             text = text,
-            style = AppTheme.typography.titleLarge,
+            style = AppTheme.typography.titleMedium,
             color = AppTheme.colors.textColorSecondary
         )
         if (showInfoButton) {

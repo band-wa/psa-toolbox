@@ -28,6 +28,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bandwa.openadb.component.LiquidDropdownMenu
 import com.bandwa.openadb.component.LiquidDropdownMenuItem
 import com.bandwa.openadb.component.RepeatingTextButton
+import com.bandwa.openadb.component.PageTitle
 import com.bandwa.openadb.component.SelectionText
 import com.bandwa.openadb.component.SwitchGroup
 import com.bandwa.openadb.component.TextButton
@@ -100,11 +101,11 @@ fun ProjectionSettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 32.dp)
-                .padding(top = 40.dp)
+                .padding(top = 24.dp)
         ) {
             Text(
                 text = "未检测到可投屏的液晶仪表，此功能不可用",
-                style = AppTheme.typography.titleLarge,
+                style = AppTheme.typography.titleMedium,
                 color = AppTheme.colors.textColorSecondary
             )
         }
@@ -118,21 +119,23 @@ fun ProjectionSettingsScreen(
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 32.dp)
-                .padding(top = 40.dp, bottom = 20.dp)
+                .padding(top = 24.dp, bottom = 20.dp)
                 .verticalScroll(scrollState)
         ) {
+            PageTitle(text = "仪表投屏")
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "仪表需要切换到原高德投屏页面，方可正常使用投屏",
-                    style = AppTheme.typography.titleLarge,
-                    color = AppTheme.colors.textColorPrimary
+                    style = AppTheme.typography.bodyMedium,
+                    color = AppTheme.colors.textColorSecondary
                 )
             }
 
             SelectionText(
                 modifier = Modifier
                     .width(300.dp)
-                    .padding(top = 40.dp, end = 20.dp),
+                    .padding(top = 24.dp, end = 20.dp),
                 text = "投屏模式",
                 showInfoButton = true,
                 infoClickListen = {
@@ -199,7 +202,7 @@ fun ProjectionSettingsScreen(
                         Text(
                             modifier = Modifier.padding(start = 16.dp),
                             text = app.name,
-                            style = AppTheme.typography.titleLarge,
+                            style = AppTheme.typography.titleMedium,
                             color = AppTheme.colors.textColorSecondary
                         )
                     }
@@ -208,7 +211,7 @@ fun ProjectionSettingsScreen(
                 Text(
                     modifier = Modifier.padding(top = 24.dp),
                     text = "投屏期间，被投屏的应用在主屏将无法打开，关闭投屏后恢复",
-                    style = AppTheme.typography.titleLarge,
+                    style = AppTheme.typography.titleMedium,
                     color = success_500,
                 )
             }
@@ -216,7 +219,7 @@ fun ProjectionSettingsScreen(
             SelectionText(
                 modifier = Modifier
                     .width(300.dp)
-                    .padding(top = 40.dp, end = 20.dp),
+                    .padding(top = 24.dp, end = 20.dp),
                 text = "开机自动投屏",
                 showInfoButton = true,
                 infoClickListen = {
@@ -232,7 +235,7 @@ fun ProjectionSettingsScreen(
             SelectionText(
                 modifier = Modifier
                     .width(300.dp)
-                    .padding(top = 40.dp, end = 20.dp),
+                    .padding(top = 24.dp, end = 20.dp),
                 text = "一键开关投屏",
                 showInfoButton = true,
                 infoClickListen = {
@@ -388,7 +391,7 @@ private fun ProjectionAdjustControls(
         Text(
             modifier = Modifier.padding(horizontal = 20.dp),
             text = "缩放",
-            style = AppTheme.typography.titleLarge,
+            style = AppTheme.typography.titleMedium,
             color = AppTheme.colors.textColorPrimary
         )
 

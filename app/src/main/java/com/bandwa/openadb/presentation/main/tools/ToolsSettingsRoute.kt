@@ -19,6 +19,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.bandwa.openadb.component.PageTitle
+import com.bandwa.openadb.component.SectionTitle
 import com.bandwa.openadb.component.SelectionText
 import com.bandwa.openadb.component.SwitchGroup
 import com.bandwa.openadb.component.TextButton
@@ -28,7 +30,6 @@ import com.bandwa.openadb.presentation.ui.PSAHelperThemePreview
 import com.bandwa.openadb.presentation.ui.md_theme_dark_surfaceTint
 import com.bandwa.openadb.presentation.ui.success_500
 import com.bandwa.openadb.preview.CombinedThemePreviews
-import com.bandwa.openadb.util.CleanStorage.Companion.cleanStorage
 import com.bandwa.openadb.service.install.ModApk
 import com.bandwa.openadb.presentation.ui.LiquidProgressDialog
 
@@ -62,27 +63,11 @@ fun ToolsSettingsScreen(
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
-    var showCleanConfirmDialog by remember { mutableStateOf(false) }
     var showRepairConfirmDialog by remember { mutableStateOf(false) }
     var repairStatus by remember { mutableStateOf<String?>(null) }
     var repairProgress by remember { mutableStateOf(0f) }
     var repairProgressText by remember { mutableStateOf("") }
     var appsAnalysisInfo by remember { mutableStateOf<String?>(null) }
-
-    if (showCleanConfirmDialog) {
-        LiquidDialog(
-            onDismissRequest = { showCleanConfirmDialog = false },
-            title = "清理确认",
-            content = "你确定要清理缓存吗？这将清除大多数应用的临时数据以释放空间。",
-            cancelText = "取消",
-            confirmText = "确认清理",
-            onConfirm = {
-                cleanStorage(context)
-                Toast.makeText(context, "清理缓存成功", Toast.LENGTH_SHORT).show()
-                showCleanConfirmDialog = false
-            },
-        )
-    }
 
     if (showRepairConfirmDialog) {
         LiquidDialog(
@@ -178,9 +163,14 @@ fun ToolsSettingsScreen(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 32.dp)
-            .padding(top = 40.dp, bottom = 20.dp)
+            .padding(top = 24.dp, bottom = 20.dp)
             .verticalScroll(scrollState)
     ) {
+        PageTitle(text = "维护诊断")
+
+        // 按用途分四组，组标题用 SectionTitle。
+        SectionTitle(modifier = Modifier.padding(top = 28.dp), text = "车辆数据")
+
         Row {
             Column {
                 SelectionText(text = "当前档位")
@@ -225,6 +215,26 @@ fun ToolsSettingsScreen(
                     color = AppTheme.colors.textColorPrimary
                 )
             }
+
+            Column(modifier = Modifier.padding(start = 80.dp)) {
+                SelectionText(text = "当前车速")
+
+                Text(
+                    text = uiState.currentSpeed,
+                    style = AppTheme.typography.headlineLarge,
+                    color = AppTheme.colors.textColorPrimary
+                )
+            }
+
+            Column(modifier = Modifier.padding(start = 80.dp)) {
+                SelectionText(text = "本次驾驶累计油耗")
+
+                Text(
+                    text = uiState.tripOilConsumption,
+                    style = AppTheme.typography.headlineLarge,
+                    color = AppTheme.colors.textColorPrimary
+                )
+            }
         }
 
         Row(modifier = Modifier.padding(top = 32.dp)) {
@@ -263,28 +273,6 @@ fun ToolsSettingsScreen(
             }
         }
 
-        Row(modifier = Modifier.padding(top = 32.dp)) {
-            Column {
-                SelectionText(text = "本次驾驶累计油耗")
-
-                Text(
-                    text = uiState.tripOilConsumption,
-                    style = AppTheme.typography.headlineLarge,
-                    color = AppTheme.colors.textColorPrimary
-                )
-            }
-
-            Column(modifier = Modifier.padding(start = 80.dp)) {
-                SelectionText(text = "当前车速")
-
-                Text(
-                    text = uiState.currentSpeed,
-                    style = AppTheme.typography.headlineLarge,
-                    color = AppTheme.colors.textColorPrimary
-                )
-            }
-        }
-
         SelectionText(
             modifier = Modifier.padding(top = 32.dp),
             text = "仅解锁后备箱",
@@ -316,13 +304,13 @@ fun ToolsSettingsScreen(
             }
         }
 
-        SelectionText(
-            modifier = Modifier.padding(top = 32.dp),
-            text = "可清除包括音乐、视频等APP的缓存"
-        )
-        TextButton(text = "清理缓存") {
-            showCleanConfirmDialog = true
-        }
+        SectionTitle(modifier = Modifier.padding(top = 40.dp), text = "清理与维护")
+
+        // 缓存清理（含自动清理开关与白名单）已并入 StorageCleanSection 内部，
+        // 与「存储清理」合成一段（2026-11-16 用户要求）。
+        StorageCleanSection(topPad = 24.dp)
+
+        MemGuardSection(topPad = 24.dp)
 
         SelectionText(
             modifier = Modifier.padding(top = 32.dp),
@@ -332,10 +320,19 @@ fun ToolsSettingsScreen(
             fixUDisk()
         }
 
-        SelectionText(
-            modifier = Modifier.padding(top = 32.dp),
-            text = "修复PSA工具箱异常，若工作正常请勿使用此功能"
-        )
+        SectionTitle(modifier = Modifier.padding(top = 40.dp), text = "运行与诊断")
+
+        RuntimeStatusSection(topPad = 20.dp)
+
+        DiagReportSection(topPad = 24.dp)
+
+        BootWifiSection(topPad = 24.dp)
+
+        // 「与风险操作」去掉了：原来这段里唯一的风险项是工程模式入口，
+        // 2026-11-16 已搬到「专家模式」页最底下，这里只剩工具箱自己的修复。
+        SectionTitle(modifier = Modifier.padding(top = 40.dp), text = "工具箱")
+
+        SelectionText(text = "修复PSA工具箱异常，若工作正常请勿使用此功能")
         TextButton(text = "修复PSA工具箱") {
             showRepairConfirmDialog = true
         }

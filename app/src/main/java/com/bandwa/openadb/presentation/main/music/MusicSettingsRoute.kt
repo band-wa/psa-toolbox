@@ -27,9 +27,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.bandwa.openadb.component.PageTitle
 import com.bandwa.openadb.component.SelectionText
 import com.bandwa.openadb.component.TextButton
-import com.bandwa.openadb.presentation.main.binding.AppKeyBindingSection
 import com.bandwa.openadb.presentation.ui.AppTheme
 import com.bandwa.openadb.presentation.ui.LiquidDialog
 import com.bandwa.openadb.presentation.ui.LiquidProgressDialog
@@ -47,9 +47,6 @@ fun AppsSettingsRoute(
         fixHiCar = viewModel::fixHiCar,
         fixCarLife = viewModel::fixCarLife,
         fixMediaPlugin = viewModel::installMediaPlugin,
-        onRequestInstalledApps = viewModel::loadInstalledApps,
-        onSelectShortClickApp = viewModel::selectShortClickApp,
-        onSelectLongClickApp = viewModel::selectLongClickApp,
     )
 }
 
@@ -59,9 +56,6 @@ fun AppsSettingsScreen(
     fixHiCar: (String) -> Unit,
     fixCarLife: () -> Unit,
     fixMediaPlugin: () -> Unit = {},
-    onRequestInstalledApps: () -> Unit = {},
-    onSelectShortClickApp: (String) -> Unit = {},
-    onSelectLongClickApp: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -108,14 +102,16 @@ fun AppsSettingsScreen(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 32.dp)
-            .padding(top = 40.dp, bottom = 20.dp)
+            .padding(top = 24.dp, bottom = 20.dp)
             .verticalScroll(scrollState)
     ) {
+        PageTitle(text = "音乐助手")
+
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = "第三方音乐方控运行中 [方向盘右滚轮上拨为上一曲，下拨为下一曲，按下为播放/暂停]",
-                style = AppTheme.typography.titleLarge,
-                color = AppTheme.colors.textColorPrimary
+                style = AppTheme.typography.bodyMedium,
+                color = AppTheme.colors.textColorSecondary
             )
             Spacer(modifier = Modifier.width(8.dp))
             Box(
@@ -169,15 +165,7 @@ fun AppsSettingsScreen(
             }
         }
 
-        AppKeyBindingSection(
-            shortClickTitle = "短按音乐按键启动APP",
-            longClickTitle = "长按音乐按键启动APP",
-            binding = uiState.binding,
-            onRequestInstalledApps = onRequestInstalledApps,
-            onSelectShortClickApp = onSelectShortClickApp,
-            onSelectLongClickApp = onSelectLongClickApp,
-        )
-
+        // 音乐按键的绑定已合并到「按键映射」页统一管理（2026-11-16）。
         SelectionText(
             modifier = Modifier.padding(top = 32.dp),
             text = "多媒体插件"

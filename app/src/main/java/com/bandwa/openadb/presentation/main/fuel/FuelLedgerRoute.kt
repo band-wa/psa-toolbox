@@ -38,6 +38,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bandwa.openadb.component.DigitWheelRow
 import com.bandwa.openadb.component.FuelAmountInput
+import com.bandwa.openadb.component.PageTitle
 import com.bandwa.openadb.component.SelectionText
 import com.bandwa.openadb.component.SwitchGroup
 import com.bandwa.openadb.component.TextButton
@@ -92,13 +93,15 @@ fun FuelLedgerScreen(
             .padding(top = 28.dp, bottom = 20.dp)
             .verticalScroll(scrollState)
     ) {
+        PageTitle(text = "油耗账本")
+
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = "加油记录",
-                style = AppTheme.typography.titleLarge,
+                style = AppTheme.typography.titleMedium,
                 color = AppTheme.colors.textColorSecondary,
             )
             Spacer(Modifier.weight(1f))
@@ -109,7 +112,7 @@ fun FuelLedgerScreen(
             )
             Text(
                 text = "  ${uiState.tankLiters} L",
-                style = AppTheme.typography.titleLarge,
+                style = AppTheme.typography.titleMedium,
                 color = AppTheme.colors.textColorPrimary,
             )
             TextButton(
@@ -372,7 +375,7 @@ private fun FuelEntryRow(
                     entry.skipped -> "已跳过 · ${entry.percentBefore}% → ${entry.percentAfter}%"
                     else -> "油量 ${entry.percentBefore}% → ${entry.percentAfter}%"
                 },
-                style = AppTheme.typography.titleLarge,
+                style = AppTheme.typography.titleMedium,
                 color = AppTheme.colors.textColorSecondary
             )
             entry.totalMileageKm?.let { mileage ->

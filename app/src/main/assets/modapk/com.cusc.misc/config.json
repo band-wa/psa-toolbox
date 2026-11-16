@@ -35,6 +35,35 @@
       ]
     },
     {
+      "filePath": "smali/com/cusc/misc/observer/KeyEventEmitter.smali",
+      "operations": [
+        {
+          "type": "insertBeforeMethod",
+          "method": ".method private onKeyClick(I)V",
+          "contentFile": "psa_handle.smali",
+          "skipIfContains": ".method private static psaHandle("
+        },
+        {
+          "type": "insertBeforeMethod",
+          "method": ".method private onKeyClick(I)V",
+          "contentFile": "psa_launch.smali",
+          "skipIfContains": ".method private static psaLaunch("
+        },
+        {
+          "type": "insertAfterRegisters",
+          "method": ".method private onKeyClick(I)V",
+          "contentFile": "psa_onkeyclick.smali",
+          "skipIfContains": "# PSA-MARK-KEYCLICK"
+        },
+        {
+          "type": "insertAfterRegisters",
+          "method": ".method private onKeyLongClick(I)V",
+          "contentFile": "psa_onkeylongclick.smali",
+          "skipIfContains": "# PSA-MARK-KEYLONGCLICK"
+        }
+      ]
+    },
+    {
       "filePath": "smali/com/platform/bdstar/drive/BdstarDriveImpl.smali",
       "operations": [
         {
@@ -104,6 +133,44 @@
         }
       ],
       "debugOnly": true
+    },
+    {
+      "filePath": "smali/com/android/car/manager/CarPropertyManager.smali",
+      "operations": [
+        {
+          "type": "appendToClass",
+          "contentFile": "psa_stopavm.smali",
+          "skipIfContains": ".method public stopAVMDisplay()Z"
+        }
+      ]
+    },
+    {
+      "filePath": "smali/com/cusc/misc/data4g/Data4gImpl.smali",
+      "operations": [
+        {
+          "type": "insertAfterRegisters",
+          "method": ".method private showNetState()V",
+          "contentFile": "psa_d4g_off.smali",
+          "skipIfContains": ":psa_net_off"
+        }
+      ]
+    },
+    {
+      "filePath": "smali/com/cusc/misc/BootReceiver.smali",
+      "operations": [
+        {
+          "type": "appendToClass",
+          "method": "",
+          "contentFile": "psa_boot.smali",
+          "skipIfContains": "static psaBoot("
+        },
+        {
+          "type": "insertAfterRegisters",
+          "method": ".method public onReceive(Landroid/content/Context;Landroid/content/Intent;)V",
+          "contentFile": "psa_boot_ins.smali",
+          "skipIfContains": "# PSA-MARK-BOOT"
+        }
+      ]
     }
   ],
   "injections": [

@@ -133,9 +133,7 @@ class PSAToolBoxService : Service() {
 
     private val defaultMediaPkgName = "com.cusc.media"
 
-    private var mediaBtnPressDownTime = 0L
 
-    private var mapAutoBtnPressDownTime = 0L
 
     private var rightBtnPressDownTime = 0L
 
@@ -147,8 +145,6 @@ class PSAToolBoxService : Service() {
 
     private val appInstallReceiver = AppInstallReceiver()
 
-    private var musicJob: Job? = null
-    private var mapJob: Job? = null
     private var projectionJob: Job? = null
 
     private var mHasFocusList = false
@@ -666,77 +662,13 @@ class PSAToolBoxService : Service() {
                 }
             }
 
-            "11" -> when (action) {
-                "0" -> {
-                    mediaBtnPressDownTime = System.currentTimeMillis()
-                    musicJob?.cancel()
-                    musicJob = serviceScope.launch {
-                        delay(2000)
-                        openBindApp()
-                    }
-                }
+            // 音乐键(0x0b)/地图键(0x0d) 的长按已改由按键映射的注入层接管
+            // （psa_handle.smali 的 :psa_r9 / :psa_r10 读 .longclick），
+            // 这里再放一份会让长按被启动两次。
 
-                "1" -> {
-                    val mediaBtnPressUpTime = System.currentTimeMillis()
-                    if (mediaBtnPressUpTime - mediaBtnPressDownTime < 2000) {
-                        musicJob?.cancel()
-                    }
-                }
-            }
-
-            "13" -> when (action) {
-                "0" -> {
-                    mapAutoBtnPressDownTime = System.currentTimeMillis()
-                    mapJob?.cancel()
-                    mapJob = serviceScope.launch {
-                        delay(2000)
-                        openBindMapApp()
-                    }
-                }
-
-                "1" -> {
-                    val mapAutoBtnPressUpTime = System.currentTimeMillis()
-                    if (mapAutoBtnPressUpTime - mapAutoBtnPressDownTime < 2000) {
-                        mapJob?.cancel()
-                    }
-                }
-            }
         }
     }
 
-    private fun openBindApp() {
-        val packageNameToLaunch = getSystemProp("persist.bandwa.music.longclick")
-        if (packageNameToLaunch.isNotEmpty()) {
-            val launchIntent =
-                packageManager.getLaunchIntentForPackage(packageNameToLaunch)
-            if (launchIntent != null) {
-                startActivity(launchIntent)
-            }
-        } else {
-            val launchIntent =
-                packageManager.getLaunchIntentForPackage("com.cusc.media")
-            if (launchIntent != null) {
-                startActivity(launchIntent)
-            }
-        }
-    }
-
-    private fun openBindMapApp() {
-        val packageNameToLaunch = getSystemProp("persist.bandwa.map.longclick")
-        if (packageNameToLaunch.isNotEmpty()) {
-            val launchIntent =
-                packageManager.getLaunchIntentForPackage(packageNameToLaunch)
-            if (launchIntent != null) {
-                startActivity(launchIntent)
-            }
-        } else {
-            val launchIntent =
-                packageManager.getLaunchIntentForPackage("com.autonavi.amapauto")
-            if (launchIntent != null) {
-                startActivity(launchIntent)
-            }
-        }
-    }
 
     private fun simulateMediaPreviousKeyPress() {
         if (!isDefaultMediaPlay()) {

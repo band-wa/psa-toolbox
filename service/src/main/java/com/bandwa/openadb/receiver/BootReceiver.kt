@@ -9,10 +9,13 @@ import androidx.annotation.RequiresApi
 import com.bandwa.openadb.service.PSAToolBoxService
 import com.bandwa.openadb.service.ToolBoxServiceWrapper
 import com.bandwa.openadb.util.CleanStorage.Companion.cleanStorage
+import com.bandwa.openadb.util.MemGuard
 import com.bandwa.openadb.util.ShellUtils
+import com.bandwa.openadb.util.StorageClean
 import com.bandwa.openadb.util.TTSHelper
 import com.bandwa.openadb.util.Utils.isStorageLessThan1GB
 import com.bandwa.openadb.service.ServiceLauncher.startProjection
+import com.bandwa.openadb.util.BootWake
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -34,6 +37,11 @@ class BootReceiver : BroadcastReceiver() {
                 if (shouldRunUserSh) {
                     ShellUtils.exec("sh /data/data/com.bandwa.openadb/scriptFiles/user.sh")
                 }
+
+                // 清理不依赖界面，也没必要陪着下面那 10 秒一起等：先做。
+                // 两个 Guard 自己带开关、阈值与冷却，不满足时什么都不做。
+                runCatching { MemGuard.auto(context, "开机") }
+                runCatching { StorageClean.auto(context, "开机") }
 
                 delay(10000)
 
@@ -67,7 +75,11 @@ class BootReceiver : BroadcastReceiver() {
                 }
 
                 val bootAutoStartApps = sharedPrefs.getStringSet("bootAutoStartApps", emptySet()) ?: emptySet()
-                if (bootAutoStartApps.isNotEmpty()) {
+                val wakeNoUi = sharedPrefs.getBoolean("bootWakeNoUi", false)
+                if (bootAutoStartApps.isNotEmpty() && wakeNoUi) {
+                    // 后台唤醒：只 startService / 绑一次 ContentProvider，一次界面都不显示。
+                    BootWake.wakeAll(context, bootAutoStartApps)
+                } else if (bootAutoStartApps.isNotEmpty()) {
                     for (pkg in bootAutoStartApps.sorted()) {
                         try {
                             val launchIntent = context.packageManager.getLaunchIntentForPackage(pkg)

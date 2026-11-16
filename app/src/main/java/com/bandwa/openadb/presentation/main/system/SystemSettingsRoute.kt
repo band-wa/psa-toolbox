@@ -1,27 +1,26 @@
 package com.bandwa.openadb.presentation.main.system
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.widget.Toast
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,17 +31,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.bandwa.openadb.component.SelectionText
+import com.bandwa.openadb.component.SectionTitle
 import com.bandwa.openadb.util.ProcessUtils.killSystemUi
+import com.bandwa.openadb.component.PageTitle
+import com.bandwa.openadb.component.SelectionText
 import com.bandwa.openadb.component.SwitchGroup
 import com.bandwa.openadb.component.TextButton
-import com.bandwa.openadb.presentation.dialog.CacheWhitelistDialog
-import com.bandwa.openadb.presentation.main.about.getAppVersionName
 import com.bandwa.openadb.presentation.ui.AppTheme
 import com.bandwa.openadb.presentation.ui.LiquidContainer
 import com.bandwa.openadb.presentation.ui.LiquidDialog
-import com.bandwa.openadb.presentation.ui.LiquidProgressDialog
-import com.bandwa.openadb.presentation.ui.LocalThemeManager
 import com.bandwa.openadb.presentation.ui.PSAHelperThemePreview
 import com.bandwa.openadb.presentation.ui.shapes
 import com.bandwa.openadb.preview.CombinedThemePreviews
@@ -51,7 +48,6 @@ import com.bandwa.openadb.util.Utils
 import com.bandwa.openadb.util.Utils.getSystemProp
 import com.bandwa.openadb.util.Utils.setSystemProp
 import com.bandwa.openadb.util.Utils.createQRCodeBitmap
-import de.palm.composestateevents.EventEffect
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -68,8 +64,6 @@ fun SystemSettingsRoute(
         changeProxyAirConditionState = viewModel::changeProxyAirConditionState,
         changeFullscreenGestureState = viewModel::changeFullscreenGestureState,
         changeFotaEnable = viewModel::changeFotaEnable,
-        checkUpdate = viewModel::checkUpdate,
-        onResetCheckUpdateEvent = viewModel::onResetCheckUpdateEvent,
     )
 }
 
@@ -80,13 +74,9 @@ fun SystemSettingsScreen(
     changeProxyAirConditionState: (Boolean) -> Unit,
     changeFullscreenGestureState: (Boolean) -> Unit,
     changeFotaEnable: (Boolean) -> Unit,
-    checkUpdate: () -> Unit,
-    onResetCheckUpdateEvent: () -> Unit,
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
-    val sharedPrefs = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-    val appVersionName = remember { context.getAppVersionName() }
 
     var isStatusBarSecondEnable by remember {
         mutableStateOf(
@@ -94,28 +84,13 @@ fun SystemSettingsScreen(
         )
     }
 
-    var shouldAutoClearSD by remember {
-        mutableStateOf(
-            sharedPrefs.getBoolean("shouldAutoClearSD", false)
-        )
-    }
-
-    var showWhitelistDialog by remember { mutableStateOf(false) }
     var showInfoDialog by remember { mutableStateOf<Pair<String, String>?>(null) }
 
-    val scope = rememberCoroutineScope()
     val localIpAddress = remember(uiState.isAdbEnable) {
         if (uiState.isAdbEnable) Utils.getLocalIpAddress() else ""
     }
 
-    val debounceInterval = 5000L
-    var lastClickTime by remember { mutableLongStateOf(0L) }
-
     var qqQrCodeBitmap by remember { mutableStateOf<Bitmap?>(null) }
-
-    EventEffect(event = uiState.showUpgradeDialog, onConsumed = onResetCheckUpdateEvent) {
-        showInfoDialog = "新版特性" to it
-    }
 
     if (showInfoDialog != null) {
         LiquidDialog(
@@ -125,56 +100,34 @@ fun SystemSettingsScreen(
         )
     }
 
-    if (uiState.downloadProgress >= 0f) {
-        LiquidProgressDialog(
-            onDismissRequest = {  },
-            title = "下载更新",
-            progress = uiState.downloadProgress,
-            progressText = uiState.downloadProgressText,
-        )
-    }
-
     LaunchedEffect(Unit) {
         qqQrCodeBitmap = withContext(Dispatchers.Default) {
             Utils.createQRCodeBitmap("https://qm.qq.com/q/bmx3VQefx", 180, 180)
         }
     }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-    ) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        // 公告栏宽度按屏幕比例自适应：窄屏（手机竖屏/小屏车机）别挤没，宽屏别拉太长。
+        // 用 BoxWithConstraints 显式算，是因为 widthIn 与 fillMaxWidth(fraction) 叠在一起时
+        // 后者会按前者收窄后的上限再取百分比，结果比下限还窄（2026-11-16 实测 274px）。
+        val noticeWidth = (maxWidth * 0.28f).coerceIn(300.dp, 460.dp)
+
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
         Column(
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 32.dp)
-                .padding(top = 40.dp, bottom = 20.dp)
+                .padding(top = 24.dp, bottom = 20.dp)
                 .verticalScroll(scrollState)
         ) {
-            SelectionText(
-                text = "当前版本：$appVersionName",
-                showInfoButton = true,
-                infoClickListen = {
-                    showInfoDialog = "版本检测" to "检查PSA工具箱是否有新版发布，若有新版本则自动下载更新，若已是最新版本则显示新版特性"
-                }
-            )
-            TextButton(
-                modifier = Modifier,
-                text = "检查更新"
-            ) {
-                val currentTime = System.currentTimeMillis()
-                if (currentTime - lastClickTime > debounceInterval) {
-                    lastClickTime = currentTime
-                    scope.launch {
-                        checkUpdate()
-                    }
-                } else {
-                    Toast.makeText(context, "慢点按，别这么快", Toast.LENGTH_LONG).show()
-                }
-            }
+            PageTitle(text = "系统设置")
+            SectionTitle(modifier = Modifier.padding(top = 32.dp), text = "车机功能")
 
             SelectionText(
-                modifier = Modifier.padding(top = 32.dp),
+                modifier = Modifier.padding(top = 20.dp),
                 text = "无线ADB调试",
                 showInfoButton = true,
                 infoClickListen = {
@@ -255,47 +208,10 @@ fun SystemSettingsScreen(
                 isEnable = uiState.isFotaInstalled
             )
 
-            SelectionText(
-                modifier = Modifier.padding(top = 32.dp),
-                text = "缓存自动清理"
-            )
-            SwitchGroup(
-                check = shouldAutoClearSD,
-                title = "打开后在存储不足时将自动清理大多数APP的缓存",
-                onCheckedChange = {
-                    shouldAutoClearSD = it
-                    sharedPrefs.edit().apply {
-                        putBoolean("shouldAutoClearSD", it)
-                        commit()
-                    }
-                    val message = if (it) {"缓存自动清理已开启"} else {"缓存自动清理已关闭"}
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                }
-            )
+            SectionTitle(modifier = Modifier.padding(top = 40.dp), text = "其它")
 
             SelectionText(
-                modifier = Modifier.padding(top = 32.dp),
-                text = "缓存清理白名单",
-                showInfoButton = true,
-                infoClickListen = {
-                    showInfoDialog = "功能说明" to "白名单中的APP不会被清理缓存，建议配合 缓存自动清理 使用"
-                }
-            )
-            TextButton(
-                text = "管理白名单"
-            ) {
-                showWhitelistDialog = true
-            }
-
-            if (showWhitelistDialog) {
-                CacheWhitelistDialog(
-                    themeManager = LocalThemeManager.current,
-                    onDismissRequest = { showWhitelistDialog = false }
-                )
-            }
-
-            SelectionText(
-                modifier = Modifier.padding(top = 32.dp),
+                modifier = Modifier.padding(top = 20.dp),
                 text = "跳转到安卓系统的原生设置，小白慎用")
             TextButton(
                 text = "系统设置"
@@ -304,26 +220,31 @@ fun SystemSettingsScreen(
             }
         }
 
+        // 公告栏：宽度按屏幕比例自适应并限制上下限，高度撑满整列。
+        // 原来写死 width(400.dp) 且没给高度，容器只包住内容，下面露出父容器的玻璃底色 ——
+        // 浅色主题下就是"底部有一块白色跟别处不一样"（2026-11-16 用户反馈）。
         LiquidContainer(
             modifier = Modifier
-                .width(400.dp)
-                .padding(top = 40.dp, bottom = 20.dp, end = 20.dp)
-                .padding(8.dp),
+                .fillMaxHeight()
+                .width(noticeWidth)
+                .padding(top = 24.dp, bottom = 20.dp, end = 20.dp),
             shape = shapes.large
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
             ) {
                 Text(
                     text = "公告栏",
-                    style = AppTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    style = AppTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = AppTheme.colors.textColorPrimary
                 )
                 Text(
                     text = uiState.webContent,
-                    style = AppTheme.typography.bodyLarge,
+                    style = AppTheme.typography.bodyMedium,
                     color = AppTheme.colors.textColorPrimary,
                     modifier = Modifier.padding(top = 16.dp)
                 )
@@ -332,7 +253,7 @@ fun SystemSettingsScreen(
 
                 Text(
                     text = "车机交流QQ群",
-                    style = AppTheme.typography.titleLarge,
+                    style = AppTheme.typography.titleMedium,
                     color = AppTheme.colors.textColorPrimary,
                     modifier = Modifier.padding(top = 16.dp)
                 )
@@ -348,6 +269,7 @@ fun SystemSettingsScreen(
                 }
             }
         }
+        }
     }
 }
 
@@ -360,9 +282,7 @@ fun SystemSettingsScreenPreview() {
             changeAdbState = { _ -> },
             changeProxyAirConditionState = { _ -> },
             changeFullscreenGestureState = { _ -> },
-            changeFotaEnable = {},
-            checkUpdate = {},
-            onResetCheckUpdateEvent = {}
+            changeFotaEnable = {}
         )
     }
 }

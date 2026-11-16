@@ -8,23 +8,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -39,20 +30,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Devices.TABLET
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.bandwa.openadb.presentation.ui.AppTheme
-import com.bandwa.openadb.presentation.ui.LiquidContainer
-import com.bandwa.openadb.presentation.ui.LocalFontScale
-import com.bandwa.openadb.presentation.ui.LocalThemeManager
-import com.bandwa.openadb.presentation.ui.PSAHelperTheme
 import com.bandwa.openadb.presentation.ui.PSAHelperThemePreview
 import com.bandwa.openadb.presentation.ui.ThemeManager
-import com.bandwa.openadb.presentation.ui.shapes
 import com.bandwa.openadb.util.Utils.PREFS_NAME
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 
@@ -62,6 +45,7 @@ data class AppInfo(
     val icon: android.graphics.drawable.Drawable?
 )
 
+/** 缓存清理白名单：左栏装的是「清理时跳过」的应用。 */
 @Composable
 fun CacheWhitelistDialog(
     themeManager: ThemeManager,
@@ -73,16 +57,9 @@ fun CacheWhitelistDialog(
     var allApps by remember { mutableStateOf<List<AppInfo>>(emptyList()) }
     var whitelistApps by remember { mutableStateOf<Set<String>>(emptySet()) }
 
-    fun saveWhitelist() {
-        sharedPrefs.edit().apply {
-            putStringSet("cacheWhitelist", whitelistApps)
-            apply()
-        }
-    }
-
     LaunchedEffect(Unit) {
         val packageManager = context.packageManager
-        val installedApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+        allApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
             .filter { app ->
                 (app.flags and ApplicationInfo.FLAG_SYSTEM) == 0 || app.packageName == "com.autonavi.amapauto"
             }
@@ -94,135 +71,22 @@ fun CacheWhitelistDialog(
                 )
             }
             .sortedBy { it.appName }
-
-        allApps = installedApps
         whitelistApps = sharedPrefs.getStringSet("cacheWhitelist", emptySet()) ?: emptySet()
     }
 
-    Dialog(
+    AppPickerTwoPane(
+        title = "缓存清理白名单",
+        hint = "右边这些应用在清理缓存时会被跳过，缓存原样保留。",
+        leftTitle = "可选应用",
+        rightTitle = "白名单应用（不清理）",
+        all = allApps,
+        selected = whitelistApps,
+        onToggle = { pkg, add ->
+            whitelistApps = if (add) whitelistApps + pkg else whitelistApps - pkg
+            sharedPrefs.edit().putStringSet("cacheWhitelist", whitelistApps).apply()
+        },
         onDismissRequest = onDismissRequest,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        CompositionLocalProvider(
-            LocalThemeManager provides themeManager,
-            LocalFontScale provides themeManager.fontScale
-        ) {
-            PSAHelperTheme {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.85f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    LiquidContainer(
-                        modifier = Modifier
-                            .fillMaxWidth(0.9f)
-                            .fillMaxHeight(0.85f),
-                        shape = shapes.large
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(24.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 24.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "缓存清理白名单管理",
-                                    style = AppTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                                    color = AppTheme.colors.textColorPrimary
-                                )
-
-                                IconButton(
-                                    onClick = onDismissRequest
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Close,
-                                        contentDescription = "关闭",
-                                        tint = AppTheme.colors.textColorPrimary,
-                                        modifier = Modifier.size(32.dp)
-                                    )
-                                }
-                            }
-
-                            Row(
-                                modifier = Modifier.fillMaxSize(),
-                                horizontalArrangement = Arrangement.spacedBy(24.dp)
-                            ) {
-                                Column(
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Text(
-                                        text = "可选应用",
-                                        style = AppTheme.typography.titleMedium,
-                                        color = AppTheme.colors.textColorSecondary,
-                                        modifier = Modifier.padding(bottom = 12.dp)
-                                    )
-
-                                    LazyColumn(
-                                        modifier = Modifier.fillMaxHeight(),
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        val availableApps = allApps.filter { it.packageName !in whitelistApps }
-                                        items(availableApps) { app ->
-                                            AppItemCard(
-                                                app = app,
-                                                isSelected = false,
-                                                onToggle = {
-                                                    whitelistApps = whitelistApps + app.packageName
-                                                    saveWhitelist()
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-
-                                VerticalDivider(
-                                    modifier = Modifier
-                                        .fillMaxHeight()
-                                        .width(1.dp),
-                                    color = AppTheme.colors.textColorSecondary.copy(alpha = 0.2f)
-                                )
-
-                                Column(
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Text(
-                                        text = "白名单应用",
-                                        style = AppTheme.typography.titleMedium,
-                                        color = AppTheme.colors.textColorSecondary,
-                                        modifier = Modifier.padding(bottom = 12.dp)
-                                    )
-
-                                    LazyColumn(
-                                        modifier = Modifier.fillMaxHeight(),
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        val selectedApps = allApps.filter { it.packageName in whitelistApps }
-                                        items(selectedApps) { app ->
-                                            AppItemCard(
-                                                app = app,
-                                                isSelected = true,
-                                                onToggle = {
-                                                    whitelistApps = whitelistApps - app.packageName
-                                                    saveWhitelist()
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    )
 }
 
 @Composable
@@ -289,7 +153,7 @@ private fun CacheWhitelistDialogPreview() {
     PSAHelperThemePreview {
         Box(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .padding(16.dp),
         ) {
             CacheWhitelistDialog(

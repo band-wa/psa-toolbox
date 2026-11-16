@@ -19,7 +19,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /** 注入宿主应用的入口；未连接工具箱时全部回退原厂行为。 */
 public final class Hook {
     public static final String TAG = "BandwaHook";
-    public static final String VERSION = "4";
+
+    /**
+     * 注入层的版本。改注入内容（比如加按键映射的 psaHandle 载荷）就要 +1：
+     * 已经打过补丁的车机会因为上报的版本与这里不一致而重新打补丁。
+     */
+    public static final String VERSION = "5";
     public static final String LAUNCHER_VERSION = "5";
 
     private static final String VENDOR_BCALL_PROP = "tbox.bcall.running";

@@ -27,6 +27,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.bandwa.openadb.component.PageTitle
+import com.bandwa.openadb.component.SectionTitle
 import com.bandwa.openadb.component.SelectionText
 import com.bandwa.openadb.component.SwitchGroup
 import com.bandwa.openadb.component.TextButton
@@ -36,6 +38,7 @@ import com.bandwa.openadb.presentation.ui.LiquidDialog
 import com.bandwa.openadb.presentation.ui.LocalThemeManager
 import com.bandwa.openadb.presentation.ui.PSAHelperThemePreview
 import com.bandwa.openadb.preview.CombinedThemePreviews
+import com.bandwa.openadb.presentation.main.tools.EngineerSection
 
 @Composable
 fun ExpertModeRoute(
@@ -45,7 +48,6 @@ fun ExpertModeRoute(
 
     ExpertModeScreen(
         uiState = uiState,
-        onListModChange = viewModel::setListMod,
         onCompatModeChange = viewModel::setCompatMode,
         onAppAutoGrantChange = viewModel::setAppAutoGrant,
         onMtkLogChange = viewModel::setMtkLogEnabled,
@@ -58,7 +60,6 @@ fun ExpertModeRoute(
 @Composable
 fun ExpertModeScreen(
     uiState: ExpertModeUIState,
-    onListModChange: (Boolean) -> Unit,
     onCompatModeChange: (Boolean) -> Unit,
     onAppAutoGrantChange: (Boolean) -> Unit,
     onMtkLogChange: (Boolean) -> Unit,
@@ -92,14 +93,16 @@ fun ExpertModeScreen(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 32.dp)
-            .padding(top = 40.dp, bottom = 20.dp)
+            .padding(top = 24.dp, bottom = 20.dp)
             .verticalScroll(scrollState)
     ) {
+        PageTitle(text = "专家模式")
+
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "专家模式中的设置不建议小白修改，请谨慎操作",
-                style = AppTheme.typography.titleLarge,
-                color = AppTheme.colors.textColorPrimary
+                text = "这里的设置不建议小白修改，请谨慎操作",
+                style = AppTheme.typography.bodyMedium,
+                color = AppTheme.colors.textColorSecondary
             )
             Spacer(modifier = Modifier.width(8.dp))
             Box(
@@ -109,20 +112,9 @@ fun ExpertModeScreen(
             )
         }
 
-        SelectionText(
-            modifier = Modifier
-                .padding(top = 32.dp)
-                .wrapContentSize(),
-            text = "LIST键启动360"
-        )
-        SwitchGroup(
-            check = uiState.isListMod,
-            title = "打开后短按LIST按键开关360全景影像",
-            onCheckedChange = onListModChange
-        )
+        SectionTitle(modifier = Modifier.padding(top = 40.dp), text = "兼容与权限")
 
         SelectionText(
-            modifier = Modifier.padding(top = 32.dp),
             text = "兼容模式",
             showInfoButton = true,
             infoClickListen = {
@@ -149,8 +141,9 @@ fun ExpertModeScreen(
             onCheckedChange = onAppAutoGrantChange
         )
 
+        SectionTitle(modifier = Modifier.padding(top = 40.dp), text = "存储与日志")
+
         SelectionText(
-            modifier = Modifier.padding(top = 32.dp),
             text = "系统调试日志"
         )
         SwitchGroup(
@@ -159,9 +152,9 @@ fun ExpertModeScreen(
             onCheckedChange = onMtkLogChange
         )
 
+        SectionTitle(modifier = Modifier.padding(top = 40.dp), text = "开机行为")
+
         SelectionText(
-            modifier = Modifier
-                .padding(top = 32.dp),
             text = "开机脚本"
         )
         SwitchGroup(
@@ -181,7 +174,7 @@ fun ExpertModeScreen(
                     modifier = Modifier
                         .padding(bottom = 16.dp),
                     text = "请用手机扫描二维码编辑脚本",
-                    style = AppTheme.typography.titleLarge,
+                    style = AppTheme.typography.titleMedium,
                     color = AppTheme.colors.textColorPrimary
                 )
                 Image(
@@ -198,8 +191,7 @@ fun ExpertModeScreen(
         }
 
         SelectionText(
-            modifier = Modifier
-                .padding(top = 32.dp),
+            modifier = Modifier.padding(top = 32.dp),
             text = "开机辅助自启"
         )
         TextButton(text = "选择自启应用") {
@@ -213,14 +205,18 @@ fun ExpertModeScreen(
             )
         }
 
+        SectionTitle(modifier = Modifier.padding(top = 40.dp), text = "运行状态")
+
         SelectionText(
-            modifier = Modifier
-                .padding(top = 32.dp),
             text = "运行中的服务"
         )
         TextButton(text = "查看运存情况") {
             onViewRunningServices()
         }
+
+        // 工程模式入口：从「维护诊断」搬到这里（2026-11-16 用户要求）。
+        // 未解锁时整段不渲染，所以「正常不要显示、注释也不要」也一并满足。
+        EngineerSection(topPad = 40.dp)
     }
 }
 
@@ -230,7 +226,6 @@ fun ExpertModeScreenPreview() {
     PSAHelperThemePreview {
         ExpertModeScreen(
             uiState = ExpertModeUIState(),
-            onListModChange = {},
             onCompatModeChange = {},
             onAppAutoGrantChange = {},
             onMtkLogChange = {},

@@ -218,7 +218,7 @@ fun LauncherSettingsDialog(
                             ) {
                                 Text(
                                     text = "原厂桌面设置",
-                                    style = AppTheme.typography.titleLarge,
+                                    style = AppTheme.typography.titleMedium,
                                     color = AppTheme.colors.textColorPrimary
                                 )
 
@@ -249,7 +249,7 @@ fun LauncherSettingsDialog(
                                         modifier = Modifier
                                             .padding(bottom = 16.dp),
                                         text = "请用手机扫描二维码上传壁纸",
-                                        style = AppTheme.typography.titleLarge,
+                                        style = AppTheme.typography.titleMedium,
                                         color = AppTheme.colors.textColorPrimary
                                     )
                                     Image(

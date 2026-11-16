@@ -34,13 +34,13 @@ fun SwitchGroup(
             Text(
                 text = title,
                 color = AppTheme.colors.textColorPrimary,
-                style = AppTheme.typography.titleLarge
+                style = AppTheme.typography.titleMedium
             )
             if (description?.isNotEmpty() == true) {
                 Text(
                     text = description,
                     color = AppTheme.colors.textColorSecondary,
-                    style = AppTheme.typography.titleSmall
+                    style = AppTheme.typography.bodyMedium
                 )
             }
         }

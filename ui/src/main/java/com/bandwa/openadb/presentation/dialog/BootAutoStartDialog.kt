@@ -68,6 +68,9 @@ fun BootAutoStartDialog(
     var returnHome by remember {
         mutableStateOf(sharedPrefs.getBoolean("bootAutoStartReturnHome", false))
     }
+    var wakeNoUi by remember {
+        mutableStateOf(sharedPrefs.getBoolean("bootWakeNoUi", false))
+    }
 
     fun saveSelection() {
         sharedPrefs.edit().apply {
@@ -125,16 +128,24 @@ fun BootAutoStartDialog(
 
                                 Spacer(modifier = Modifier.weight(1f))
 
-                                Row(
+                                Column(
                                     modifier = Modifier
                                         .border(
                                             width = 1.dp,
                                             color = AppTheme.colors.textColorSecondary.copy(alpha = 0.25f),
                                             shape = RoundedCornerShape(12.dp)
                                         )
-                                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                        .padding(horizontal = 12.dp, vertical = 8.dp)
                                 ) {
+                                    SwitchGroup(
+                                        check = wakeNoUi,
+                                        title = "不进界面（后台唤醒）",
+                                        onCheckedChange = {
+                                            wakeNoUi = it
+                                            sharedPrefs.edit().putBoolean("bootWakeNoUi", it).apply()
+                                        }
+                                    )
+
                                     SwitchGroup(
                                         check = returnHome,
                                         title = "启动APP后返回桌面",

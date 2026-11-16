@@ -21,8 +21,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.animation.core.animateFloatAsState
@@ -43,8 +41,10 @@ import com.bandwa.openadb.ui.R as UiR
 import com.bandwa.openadb.component.TabItem
 import com.bandwa.openadb.component.VerticalTabLayout
 import com.bandwa.openadb.presentation.main.about.AboutSettingsRoute
+import com.bandwa.openadb.presentation.main.apps.AppsRoute
 import com.bandwa.openadb.presentation.main.fuel.FuelLedgerRoute
 import com.bandwa.openadb.presentation.main.expert.ExpertModeRoute
+import com.bandwa.openadb.presentation.main.keymap.KeyMapRoute
 import com.bandwa.openadb.presentation.main.music.AppsSettingsRoute
 import com.bandwa.openadb.presentation.main.navi.NaviSettingsRoute
 import com.bandwa.openadb.presentation.main.person.PersonSettingsRoute
@@ -124,7 +124,6 @@ class MainActivity : ComponentActivity() {
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun HomeScreen(activity: Activity) {
-    val scrollState = rememberScrollState()
     val context = activity
     val sharedPrefs = remember { context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) }
 
@@ -257,17 +256,20 @@ fun HomeScreen(activity: Activity) {
         )
     }
 
+    // group 只影响左侧菜单的分组分隔线（组号变化处画一条细线），与路由无关。
     val tabs = remember {
         listOf(
-            TabItem(1, UiR.drawable.ic_tab_settings, "系统设置"),
-            TabItem(2, UiR.drawable.ic_music_settings, "音乐助手"),
-            TabItem(3, UiR.drawable.ic_person_settings, "个性设置"),
-            TabItem(4, UiR.drawable.ic_navi_settings, "导航助手"),
-            TabItem(5, UiR.drawable.ic_projection_settings, "仪表投屏"),
-            TabItem(6, UiR.drawable.ic_fuel_ledger, "油耗账本"),
-            TabItem(7, UiR.drawable.ic_tool_settings, "维护诊断"),
-            TabItem(8, UiR.drawable.ic_expert_mode, "专家模式"),
-            TabItem(9, UiR.drawable.ic_tool_info, "关于软件")
+            TabItem(1, UiR.drawable.ic_tab_settings, "系统设置", 0),
+            TabItem(3, UiR.drawable.ic_person_settings, "个性设置", 0),
+            TabItem(2, UiR.drawable.ic_music_settings, "音乐助手", 0),
+            TabItem(4, UiR.drawable.ic_navi_settings, "导航助手", 0),
+            TabItem(10, UiR.drawable.ic_key_map, "按键映射", 0),
+            TabItem(5, UiR.drawable.ic_projection_settings, "仪表投屏", 0),
+            TabItem(6, UiR.drawable.ic_fuel_ledger, "油耗账本", 1),
+            TabItem(11, UiR.drawable.ic_apps, "应用管理", 2),
+            TabItem(7, UiR.drawable.ic_tool_settings, "维护诊断", 2),
+            TabItem(8, UiR.drawable.ic_expert_mode, "专家模式", 2),
+            TabItem(9, UiR.drawable.ic_tool_info, "关于软件", 3)
         )
     }
     var currentTab by remember { mutableStateOf(tabs[0]) }
@@ -290,10 +292,10 @@ fun HomeScreen(activity: Activity) {
                     .width(220.dp)
                     .fillMaxHeight()
             ) {
+                // 这里不能再套 verticalScroll：里面本来就是 LazyColumn（VerticalTabLayout），
+                // 两层滚动会互相抢手势；而且 verticalScroll 内 weight(1f) 失效，列表高度算不出来。
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(scrollState)
+                    modifier = Modifier.fillMaxSize()
                 ) {
                     Text(
                         modifier = Modifier
@@ -302,7 +304,7 @@ fun HomeScreen(activity: Activity) {
                             .padding(top = 24.dp, bottom = 16.dp),
                         text = stringResource(id = R.string.app_name),
                         color = AppTheme.colors.textColorPrimary,
-                        style = AppTheme.typography.titleLarge,
+                        style = AppTheme.typography.titleMedium,
                         textAlign = TextAlign.Center
                     )
 
@@ -329,6 +331,9 @@ fun HomeScreen(activity: Activity) {
                 ) {
                     when (currentTab.id) {
                         1 -> SystemSettingsRoute()
+                        // 「音乐助手」2026-11-16 一度隐藏，用户当天又要求恢复显示 ⇒ 走原 Route。
+                        // 「关于软件」(9) 按 GPL-3.0 §5 必须保留版权与许可证声明，也显示。
+                        // HiddenPage() 及其注释保留着，下次要临时藏页面直接换回去即可。
                         2 -> AppsSettingsRoute()
                         3 -> PersonSettingsRoute()
                         4 -> NaviSettingsRoute()
@@ -337,12 +342,27 @@ fun HomeScreen(activity: Activity) {
                         7 -> ToolsSettingsRoute()
                         8 -> ExpertModeRoute()
                         9 -> AboutSettingsRoute()
+                        10 -> KeyMapRoute()
+                11 -> AppsRoute()
                         else -> SystemSettingsRoute()
                     }
                 }
             }
         }
     }
+}
+
+/**
+ * 被「暂时隐藏」的页面所渲染的空内容。
+ *
+ * 用户 2026-11-16 要求：隐藏「音乐助手」「关于软件」的**页面所有内容**，
+ * 但**不删除入口和组件**。所以左侧菜单项还在、还能点，只是右侧什么都不画。
+ * 恢复时把 `when (currentTab.id)` 里对应的分支换回原 Route 即可，
+ * 原 Route 文件（AppsSettingsRoute / AboutSettingsRoute）一行都没改。
+ */
+@Composable
+private fun HiddenPage() {
+    Box(modifier = Modifier.fillMaxSize())
 }
 
 private suspend fun coreNeedsInstall(context: Context): Boolean {

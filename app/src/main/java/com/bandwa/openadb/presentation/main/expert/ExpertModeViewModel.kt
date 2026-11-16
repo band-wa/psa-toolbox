@@ -40,18 +40,12 @@ class ExpertModeViewModel @Inject constructor(
         val mtkLogEnabled = withContext(Dispatchers.IO) { isMtkLogEnable() }
         _uiState.update {
             it.copy(
-                isListMod = localPrefs.getBoolean(KEY_LIST_MOD, false),
                 isCompatMode = corePrefs.getBoolean(COMPAT_MODE_KEY, false),
                 isAppAutoGrant = corePrefs.getBoolean(APP_AUTO_GRANT_KEY, true),
                 isMtkLogEnabled = mtkLogEnabled,
                 shouldRunUserSh = localPrefs.getBoolean(KEY_RUN_USER_SH, false),
             )
         }
-    }
-
-    fun setListMod(enabled: Boolean) {
-        localPrefs.edit().putBoolean(KEY_LIST_MOD, enabled).commit()
-        _uiState.update { it.copy(isListMod = enabled) }
     }
 
     fun setCompatMode(enabled: Boolean) {
@@ -103,7 +97,6 @@ class ExpertModeViewModel @Inject constructor(
     }
 
     private companion object {
-        const val KEY_LIST_MOD = "isListMod"
         const val KEY_RUN_USER_SH = "shouldRunUserSh"
     }
 }

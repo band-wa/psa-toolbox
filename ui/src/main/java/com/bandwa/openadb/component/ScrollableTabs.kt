@@ -1,6 +1,5 @@
 package com.bandwa.openadb.component
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,8 +34,8 @@ import com.bandwa.openadb.presentation.ui.AppTheme
 import com.bandwa.openadb.presentation.ui.PSAHelperThemePreview
 import com.bandwa.openadb.preview.CombinedThemePreviews
 
-private const val TAB_ITEM_WIDTH = 240
-private const val TAB_ITEM_HEIGHT = 76
+private const val TAB_ITEM_HEIGHT = 44
+
 
 @Composable
 fun VerticalTabLayout(
@@ -45,24 +43,27 @@ fun VerticalTabLayout(
     modifier: Modifier = Modifier,
     onTabSelected: (TabItem) -> Unit
 ) {
-    val width = TAB_ITEM_WIDTH.dp
-    var selectedItem by remember { mutableStateOf(tabs.first()) }
+    var selectedId by remember { mutableStateOf(tabs.firstOrNull()?.id ?: -1) }
 
-    Box(
-        modifier = modifier
+    // 单列 LazyColumn（不再写死 240dp 宽），宽度交给外层容器，避免内容被裁。
+    LazyColumn(
+        modifier = modifier.padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
-        LazyColumn(
-            modifier = Modifier
-                .width(width)
-                .fillMaxSize()
-                .padding(horizontal = 14.dp, vertical = 12.dp)
-        ) {
-            items(tabs.size) { index ->
-                val tab = tabs[index]
-                TabItemView(tab = tab, isSelected = tab == selectedItem) {
-                    selectedItem = tab
-                    onTabSelected(tab)
-                }
+        items(tabs.size, key = { tabs[it].id }) { index ->
+            val tab = tabs[index]
+            // 组与组之间画一条细分隔线，让菜单有层次；组号相同就不画。
+            if (index > 0 && tab.group != tabs[index - 1].group) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 6.dp)
+                        .height(1.dp)
+                        .background(AppTheme.colors.glassBorderColor)
+                )
+            }
+            TabItemView(tab = tab, isSelected = tab.id == selectedId) {
+                selectedId = tab.id
+                onTabSelected(tab)
             }
         }
     }
@@ -71,42 +72,41 @@ fun VerticalTabLayout(
 @Composable
 fun TabItemView(tab: TabItem, isSelected: Boolean, onClick: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
-    val alpha by animateFloatAsState(targetValue = if (isSelected) 1f else 0.65f, label = "alpha")
     val isLight = AppTheme.colors.textColorPrimary == Color(0xFF18191A)
+    val brand = AppTheme.colors.colorBrand
+    val textPrimary = AppTheme.colors.textColorPrimary
+    val iconPrimary = AppTheme.colors.iconColorPrimary
+
+    // 选中态用两层静态色替代原来的 alpha 动画 + 每项各自新建 Brush：
+    // 11 个 tab 各跑一个 animateFloatAsState，滑动时每次状态变化都会让整列重组/重绘。
+    val background: Brush = if (isSelected) {
+        if (isLight) {
+            Brush.linearGradient(listOf(brand.copy(alpha = 0.15f), brand.copy(alpha = 0.05f)))
+        } else {
+            Brush.linearGradient(listOf(Color.White.copy(alpha = 0.25f), Color.White.copy(alpha = 0.15f)))
+        }
+    } else {
+        Brush.linearGradient(listOf(Color.Transparent, Color.Transparent))
+    }
+    val contentColor = if (isSelected) {
+        if (isLight) brand else Color.White
+    } else {
+        textPrimary
+    }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(TAB_ITEM_HEIGHT.dp)
-            .padding(vertical = 6.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(
-                if (isSelected) {
-                    if (isLight) {
-                        Brush.linearGradient(
-                            colors = listOf(
-                                AppTheme.colors.colorBrand.copy(alpha = 0.15f),
-                                AppTheme.colors.colorBrand.copy(alpha = 0.05f)
-                            )
-                        )
-                    } else {
-                        Brush.linearGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.25f),
-                                Color.White.copy(alpha = 0.15f)
-                            )
-                        )
-                    }
-                } else {
-                    Brush.linearGradient(listOf(Color.Transparent, Color.Transparent))
-                }
-            )
+            .padding(vertical = 2.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(background)
             .then(
                 if (isSelected) {
                     Modifier.border(
                         width = 1.dp,
-                        color = if (isLight) AppTheme.colors.colorBrand.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(20.dp)
+                        color = if (isLight) brand.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(14.dp)
                     )
                 } else Modifier
             )
@@ -120,31 +120,28 @@ fun TabItemView(tab: TabItem, isSelected: Boolean, onClick: () -> Unit) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = 20.dp)
-                .alpha(alpha),
+                .padding(start = 16.dp)
+                .alpha(if (isSelected) 1f else 0.65f),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                modifier = Modifier.size(30.dp),
+                modifier = Modifier.size(22.dp),
                 painter = painterResource(id = tab.icon),
                 contentDescription = "Tab ${tab.title} icon",
-                tint = if (isSelected) {
-                    if (isLight) AppTheme.colors.colorBrand else Color.White
-                } else AppTheme.colors.iconColorPrimary
+                tint = if (isSelected) contentColor else iconPrimary
             )
             Text(
-                modifier = Modifier.padding(start = 14.dp),
+                modifier = Modifier.padding(start = 10.dp),
                 text = tab.title,
-                color = if (isSelected) {
-                    if (isLight) AppTheme.colors.colorBrand else Color.White
-                } else AppTheme.colors.textColorPrimary,
+                color = contentColor,
                 style = AppTheme.typography.titleMedium
             )
         }
     }
 }
 
-data class TabItem(val id: Int, val icon: Int, val title: String)
+/** group 用于菜单分组：相邻两项 group 不同就画一条分隔线。 */
+data class TabItem(val id: Int, val icon: Int, val title: String, val group: Int = 0)
 
 @CombinedThemePreviews
 @Composable

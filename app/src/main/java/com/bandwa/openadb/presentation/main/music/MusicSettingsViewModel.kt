@@ -5,7 +5,6 @@ import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bandwa.openadb.config.RemoteEndpoints
-import com.bandwa.openadb.presentation.main.binding.AppKeyBindingStore
 import com.bandwa.openadb.util.Utils
 import com.bandwa.openadb.util.Utils.isNetSystemUsable
 import com.bandwa.openadb.util.VersionUtils.isRemoteVersionDiff
@@ -25,33 +24,6 @@ class MusicSettingsViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MusicSettingsUIState())
     val uiState = _uiState.asStateFlow()
-
-    init {
-        restoreBindings()
-    }
-
-    private fun restoreBindings() {
-        _uiState.update {
-            it.copy(binding = AppKeyBindingStore.read(context, PROP_SHORT_CLICK, PROP_LONG_CLICK))
-        }
-    }
-
-    fun loadInstalledApps() = viewModelScope.launch {
-        val apps = AppKeyBindingStore.loadInstalledApps(context)
-        _uiState.update { it.copy(binding = it.binding.copy(installedApps = apps)) }
-    }
-
-    fun selectShortClickApp(packageName: String) {
-        val app = AppKeyBindingStore.save(context, PROP_SHORT_CLICK, packageName)
-        _uiState.update { it.copy(binding = it.binding.copy(shortClickApp = app)) }
-        Toast.makeText(context, "短按APP设置成功", Toast.LENGTH_SHORT).show()
-    }
-
-    fun selectLongClickApp(packageName: String) {
-        val app = AppKeyBindingStore.save(context, PROP_LONG_CLICK, packageName)
-        _uiState.update { it.copy(binding = it.binding.copy(longClickApp = app)) }
-        Toast.makeText(context, "长按APP设置成功", Toast.LENGTH_SHORT).show()
-    }
 
     fun fixHiCar(brand: String) {
         viewModelScope.launch {
@@ -211,9 +183,6 @@ class MusicSettingsViewModel @Inject constructor(
     }
 
     private companion object {
-        const val PROP_SHORT_CLICK = "persist.bandwa.music.shortclick"
-        const val PROP_LONG_CLICK = "persist.bandwa.music.longclick"
-
         const val HICAR_PACKAGE = "com.huawei.hicar.demoapp"
         val HICAR_APK_URL = RemoteEndpoints.ota("/tools/hicar/hicar_fix.apk")
         val HICAR_MD5_URL = RemoteEndpoints.ota("/tools/hicar/hicar_md5")

@@ -247,7 +247,40 @@ object ModApk {
                     val operation = operations.getJSONObject(j)
                     val operationType = operation.getString("type")
 
+                    // 幂等：现场类里已经有这个串就跳过，避免重复注入
+                    val skipIfContains = operation.optString("skipIfContains")
+                    if (skipIfContains.isNotEmpty() &&
+                        SmaliMod.checkValueExist(targetFile, skipIfContains)
+                    ) {
+                        anyModified = true
+                        continue
+                    }
+
                     val modified = when (operationType) {
+                        "insertBeforeMethod" -> {
+                            val content = readContentFile(operation.getString("contentFile"))
+                            if (content != null) {
+                                SmaliMod.insertBeforeMethod(
+                                    targetFile, operation.getString("method"), content
+                                )
+                            } else {
+                                false
+                            }
+                        }
+                        "insertAfterRegisters" -> {
+                            val content = readContentFile(operation.getString("contentFile"))
+                            if (content != null) {
+                                SmaliMod.insertAfterRegisters(
+                                    targetFile, operation.getString("method"), content
+                                )
+                            } else {
+                                false
+                            }
+                        }
+                        "appendToClass" -> {
+                            val content = readContentFile(operation.getString("contentFile"))
+                            if (content != null) SmaliMod.appendToClass(targetFile, content) else false
+                        }
                         "replaceValue" -> {
                             val oldValue = operation.getString("oldValue")
                             val newValue = operation.getString("newValue")
