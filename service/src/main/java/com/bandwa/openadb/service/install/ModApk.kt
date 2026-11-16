@@ -70,8 +70,6 @@ object ModApk {
                     return@launch
                 }
 
-                if (isInstalledInData) uninstallUpdateAwait(context, targetPackageName)
-
                 val workspaceDir = Utils.workspaceDir(context)
 
                 if (workspaceDir.exists()) {
@@ -82,7 +80,15 @@ object ModApk {
                 val signTool = ApkSignUtil.loadKey(context)
                 if (signTool == null) throw Exception("Failed to load signing key")
 
-                success = runFastPack(context, targetPackageName, sourceApkPath, workspaceDir, signTool)
+                val outputApk = runFastPack(
+                    context, targetPackageName, sourceApkPath, workspaceDir, signTool
+                )
+                if (outputApk != null) {
+                    // 打包与签名都成功之后才卸更新：这一步之前失败，车机上那份更新原封不动
+                    if (isInstalledInData) uninstallUpdateAwait(context, targetPackageName)
+                    ApkInstaller.start(context, outputApk, targetPackageName)
+                    success = true
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "packageMod failed for $targetPackageName", e)
             }
@@ -103,16 +109,16 @@ object ModApk {
         sourceApkPath: String,
         workspaceDir: File,
         signTool: ApkSignUtil,
-    ): Boolean {
+    ): File? {
         return try {
             val config = readConfig(context, targetPackageName) ?: run {
                 Log.e(TAG, "fast pack: config missing for $targetPackageName")
-                return false
+                return null
             }
             val types = targetTypes(config)
             if (types.isEmpty()) {
                 Log.e(TAG, "fast pack: no target types for $targetPackageName")
-                return false
+                return null
             }
 
             val unsigned = File(workspaceDir, "${targetPackageName}_unsigned.apk")
@@ -134,25 +140,24 @@ object ModApk {
             val packed = withContext(Dispatchers.Default) { packer.pack() }
             if (!packed) {
                 Log.e(TAG, "fast pack: pack() returned false")
-                return false
+                return null
             }
             val missing = expectedFiles - appliedFiles
             if (missing.isNotEmpty()) {
                 Log.e(TAG, "fast pack: classes not patched: $missing")
-                return false
+                return null
             }
 
             if (!signTool.sign(unsigned, outputApk, 24)) {
                 Log.e(TAG, "fast pack: sign failed")
-                return false
+                return null
             }
             unsigned.delete()
 
-            ApkInstaller.start(context, outputApk, targetPackageName)
-            true
+            outputApk
         } catch (e: Exception) {
             Log.e(TAG, "runFastPack failed", e)
-            false
+            null
         }
     }
 
