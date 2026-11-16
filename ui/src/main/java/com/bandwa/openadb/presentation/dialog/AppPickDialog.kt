@@ -26,10 +26,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.bandwa.openadb.component.TextButton
+import com.bandwa.openadb.presentation.ui.AppTheme
 import com.bandwa.openadb.presentation.ui.keyDivider
 import com.bandwa.openadb.presentation.ui.keySurface
 import com.bandwa.openadb.presentation.ui.keyTextPrimary
@@ -70,7 +70,7 @@ fun AppPickDialog(
                         modifier = Modifier.weight(1f),
                         text = title,
                         color = keyTextPrimary(),
-                        fontSize = 18.sp,
+                        style = AppTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                     )
                     TextButton(text = "取消") { onDismissRequest() }
@@ -140,14 +140,18 @@ private fun PickCell(
                     modifier = Modifier.size(44.dp),
                 )
             } else if (placeholder != null) {
-                Text(text = placeholder, color = keyTextSecondary(), fontSize = 26.sp)
+                Text(
+                    text = placeholder,
+                    color = keyTextSecondary(),
+                    style = AppTheme.typography.headlineSmall,
+                )
             }
         }
         Text(
             modifier = Modifier.padding(top = 6.dp),
             text = label,
             color = keyTextPrimary(),
-            fontSize = 13.sp,
+            style = AppTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

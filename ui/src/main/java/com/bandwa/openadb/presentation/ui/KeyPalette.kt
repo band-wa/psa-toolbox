@@ -8,9 +8,8 @@ import androidx.compose.ui.unit.dp
 /**
  * 「按键映射」页与选应用弹窗的配色。
  *
- * 原来这几个值是按按键映射软件的深色主题写死的（0xFF15181D 那一套），工具箱切到浅色主题时
- * 那块界面还是黑的、字还发白，看着像另一个软件的洞。所以统一改成跟 AppTheme 同一套判定：
- * 深色沿用原值，浅色另给一组浅底深字的对应色，靠 isLightTheme() 自动切换。
+ * 两种主题各给一组值，由 isLightTheme() 切换；浅色的次要文字与空值提示要满足对比度 ≥ 4.5:1，
+ * 别为了「淡一点好看」调浅。
  */
 @Composable
 fun keySurface(): Color = if (isLightTheme()) Color(0xFFF7F8FA) else Color(0xFF15181D)
@@ -28,12 +27,12 @@ fun keyStroke(): Color = if (isLightTheme()) Color(0xFFDCE0E7) else Color(0xFF2A
 fun keyTextPrimary(): Color = if (isLightTheme()) Color(0xFF18191A) else Color(0xFFEDEFF3)
 
 @Composable
-fun keyTextSecondary(): Color = if (isLightTheme()) Color(0xFF72767C) else Color(0xFF9BA3AF)
+fun keyTextSecondary(): Color = if (isLightTheme()) Color(0xFF5A616B) else Color(0xFF9BA3AF)
 
 @Composable
 fun keyValue(): Color = if (isLightTheme()) Color(0xFF22334D) else Color(0xFFC8D4E6)
 
 @Composable
-fun keyNoneHint(): Color = if (isLightTheme()) Color(0xFF9AA1AB) else Color(0xFF6B7280)
+fun keyNoneHint(): Color = if (isLightTheme()) Color(0xFF6B7280) else Color(0xFF8A93A0)
 
 val KeyCardShape = RoundedCornerShape(14.dp)
