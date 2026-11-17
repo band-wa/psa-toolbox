@@ -216,13 +216,12 @@ adb install -r app/build/outputs/apk/release/app-release.apk
 
 ## 贡献指南
 
-欢迎 Issue、PR 与车型适配反馈：
+欢迎 Issue、PR 与车型适配反馈。PR 请以 `dev` 分支为目标分支，不要直接向 `main` 提交：
 
-1. 较大的改动请先开 Issue 讨论方案；
-2. 提交信息遵循 `type(scope): 摘要`（如 `fix(service): 修复投屏偏移`），与现有提交风格保持一致；
-3. 提交前请跑通 `./gradlew :core:testDebugUnitTest :service:testDebugUnitTest :app:testDebugUnitTest` 与 `./gradlew :app:assembleRelease`；
-4. 不要提交 OTA 私有地址等敏感信息；
-5. 代码风格与注释语言保持与现有代码一致（中文注释、4 空格缩进），注释遵循 [docs/comment-style.md](docs/comment-style.md) 的极简规范。
+1. 提交信息遵循 `type(scope): 摘要`（如 `fix(service): 修复投屏偏移`），与现有提交风格保持一致；
+2. 提交前请跑通 `./gradlew :core:testDebugUnitTest :service:testDebugUnitTest :app:testDebugUnitTest` 与 `./gradlew :app:assembleRelease`；
+3. 不要提交 OTA 私有地址等敏感信息；
+4. 代码风格与注释语言保持与现有代码一致（中文注释、4 空格缩进），注释遵循 [docs/comment-style.md](docs/comment-style.md) 的极简规范。
 
 ## 致谢
 
