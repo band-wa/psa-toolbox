@@ -31,7 +31,7 @@
 | platform-tools | `37.0.1` |
 | 加速 | AEHD `2.2.0`（`extras;google;Android_Emulator_Hypervisor_Driver`） |
 | JDK | `<jdk-17>`（`setup.ps1` 默认值，用 `-JavaHome` 覆盖；sdkmanager/avdmanager 需要） |
-| AVD 设备档 | `automotive_1024p_landscape`：1920×720、density 160、4G RAM、8G data、swiftshader、无音视频、无相机、键盘、无边框、4 核 |
+| AVD 设备档 | `automotive_1024p_landscape`：1920×720、density 213、4G RAM、8G data、swiftshader、无音视频、无相机、键盘、无边框、4 核 |
 | bootclasspath jar | `tools/android-car-boot/api/build/android.car.jar` 12,341 B，sha256 `cb71ec77…6bf1d42b` |
 | 服务 APK | `tools/android-car-boot/service/build/outputs/apk/debug/service-debug.apk` 35,703 B，sha256 `aa17a87a…f47d8fdd` |
 | probe APK（可选，自备） | `verify/bootinject/out/probe-app.apk`，包 `com.bandwa.bootinject.probe`，logcat tag `CARPROBE`；不存在时跳过该项校验 |
@@ -47,7 +47,7 @@
 | platform-tools | SDK 组件 `platform-tools` |
 | 加速 | 系统 Hypervisor.framework（HVF），无需安装；`emulator-check accel` 输出 `Hypervisor.Framework` |
 | JDK | JDK 17（`--java-home` 可覆盖；sdkmanager 需要） |
-| AVD 设备档 | `setup.sh` 直写 config.ini：1920×720、density 160、4G RAM、8G data、swiftshader_indirect、无音视频、无相机、键盘、无边框、4 核、横屏 |
+| AVD 设备档 | `setup.sh` 直写 config.ini：1920×720、density 213、4G RAM、8G data、swiftshader_indirect、无音视频、无相机、键盘、无边框、4 核、横屏 |
 | bootclasspath jar | `tools/android-car-boot/api/build/android.car.jar` 12,341 B，sha256 `cb71ec77…6bf1d42b`（与 Windows 相同） |
 | 服务 APK | `tools/android-car-boot/service/build/outputs/apk/debug/service-debug.apk` 24,903 B，sha256 `30af2683…c29d45e` |
 | APP APK（可选） | `app/build/outputs/apk/debug/app-debug.apk` 14,586,486 B，sha256 `886819b7…ff745eb4`，包 `com.bandwa.openadb` 5.3.4 |

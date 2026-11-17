@@ -32,7 +32,7 @@ DESIRED_KEYS=(
 DESIRED_VALUES=(
     "1920"
     "720"
-    "160"
+    "213"
     "4096M"
     "8G"
     "yes"

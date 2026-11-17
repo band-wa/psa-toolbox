@@ -7,7 +7,7 @@
     Installs the required SDK packages (emulator, platform-tools, API 28 default
     x86_64 system image), creates the AVD with the automotive_1024p_landscape
     hardware profile and writes the config.ini overrides required by
-    tools/android-car-boot/avd (1920x720 @160dpi, 4 GB RAM, 8 GB data, swiftshader,
+    tools/android-car-boot/avd (1920x720 @213dpi, 4 GB RAM, 8 GB data, swiftshader,
     audio/camera off).  Checks AEHD acceleration.
 
     Idempotent: installed packages and existing config values are kept unless -Force.
@@ -51,7 +51,7 @@ $RequiredPackages = @("emulator", "platform-tools", $SystemImage)
 $DesiredConfig = [ordered]@{
     "hw.lcd.width"              = "1920"
     "hw.lcd.height"             = "720"
-    "hw.lcd.density"            = "160"
+    "hw.lcd.density"            = "213"
     "hw.ramSize"                = "4096M"
     "disk.dataPartition.size"   = "8G"
     "hw.gpu.enabled"            = "yes"
