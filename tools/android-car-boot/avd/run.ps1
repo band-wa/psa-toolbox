@@ -9,8 +9,8 @@
     sys.boot_completed=1 (exact match), and finally runs "adb root".
 
     Default command line:
-      emulator -avd <name> -port <port> -no-window -no-audio -no-boot-anim
-               -gpu swiftshader_indirect -writable-system -no-snapshot
+      emulator -avd <name> -port <port> -no-audio -no-boot-anim
+               -gpu auto -writable-system -no-snapshot
 
     The script refuses mismatched AVD names.  Only an emulator process whose
     command line contains "-avd <name>" is ever stopped.
@@ -19,7 +19,8 @@
     powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\run.ps1
     powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\run.ps1 -Status
     powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\run.ps1 -Stop
-    powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\run.ps1 -Port 5556 -Window
+    powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\run.ps1 -Port 5556 -Gpu host
+    powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\run.ps1 -NoWindow
 #>
 [CmdletBinding()]
 param(
@@ -28,7 +29,8 @@ param(
     [string]$SdkRoot = "D:\Tools\Android\sdk",
     [bool]$NoSnapshot = $true,
     [bool]$WritableSystem = $true,
-    [switch]$Window,
+    [switch]$NoWindow,
+    [string]$Gpu = "auto",
     [switch]$Stop,
     [switch]$Restart,
     [switch]$Status,
@@ -175,8 +177,8 @@ function Start-Avd {
     }
 
     $emuArgs = @("-avd", $AvdName, "-port", "$Port",
-                 "-no-audio", "-no-boot-anim", "-gpu", "swiftshader_indirect")
-    if (-not $Window) { $emuArgs = @("-no-window") + $emuArgs }
+                 "-no-audio", "-no-boot-anim", "-gpu", $Gpu)
+    if ($NoWindow) { $emuArgs = @("-no-window") + $emuArgs }
     if ($WritableSystem) { $emuArgs += "-writable-system" }
     if ($NoSnapshot) { $emuArgs += "-no-snapshot" }
 

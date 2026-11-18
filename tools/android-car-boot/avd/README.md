@@ -136,11 +136,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\s
 ### 4.2 启动 / 停止（run.ps1）
 
 ```powershell
-# 启动（默认 psa_api28 @ 5554，无窗口，writable-system，no-snapshot），等 boot 后自动 adb root
+# 启动（默认 psa_api28 @ 5554，窗口，writable-system，no-snapshot），等 boot 后自动 adb root
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\run.ps1
 
-# 换端口 / 显示窗口 / 允许快照 / 不带 writable-system
-powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\run.ps1 -Port 5556 -Window
+# 换端口 / 强制 GPU / 无窗口 / 允许快照 / 不带 writable-system
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\run.ps1 -Port 5556 -Gpu host
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\run.ps1 -NoWindow
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\run.ps1 -NoSnapshot $false
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\run.ps1 -WritableSystem $false
 
@@ -152,7 +153,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\r
 ```
 
 参数：`-AvdName`、`-Port`（偶数，5554–5584）、`-SdkRoot`、`-NoSnapshot`、
-`-WritableSystem`、`-Window`、`-Stop`、`-Restart`、`-Status`、`-DryRun`、`-TimeoutSec`（默认 300）。
+`-WritableSystem`、`-NoWindow`（默认有窗口，加它才是 headless）、`-Gpu`（默认 `auto`）、
+`-Stop`、`-Restart`、`-Status`、`-DryRun`、`-TimeoutSec`（默认 300）。
 
 说明：通过 WMI（`Win32_Process.Create`）启动，避免父 shell 退出时连带杀掉模拟器；
 日志在 `tools/android-car-boot/build/avd-logs/emulator-<port>.log`。
@@ -305,7 +307,7 @@ PowerShell 风格（`-AvdName`）两种拼写；布尔型参数还接受 `1/true
 | 脚本 | 选项 |
 | --- | --- |
 | `setup.sh` | `--avd-name`（默认 `psa_api28`）、`--sdk-root`、`--java-home`、`--force`、`--verify-only`、`--skip-sdk-install`、`--dry-run`、`-h` |
-| `run.sh` | `--avd-name`、`--port`（偶数 `5554`–`5584`，默认 `5554`）、`--sdk-root`、`--window`、`--no-snapshot`、`--writable-system`、`--timeout-sec`（300）、`--status`、`--stop`、`--restart`、`--dry-run`、`-h` |
+| `run.sh` | `--avd-name`、`--port`（偶数 `5554`–`5584`，默认 `5554`）、`--sdk-root`、`--window`（默认开启，`--window=0` 为 headless）、`--gpu`（默认 `auto`）、`--no-snapshot`、`--writable-system`、`--timeout-sec`（300）、`--status`、`--stop`、`--restart`、`--dry-run`、`-h` |
 | `snapshot.sh` | `--avd-name`、`--zip-path`、`--sdk-root`、`--no-stop`、`--keep-stage`、`--force`、`--dry-run`、`--timeout-sec`（120）、`--checksum-max-mb`（64）、`-h` |
 | `provision.py` | 互斥 `--verify` / `--rollback` / `--dry-run` / `--print-device-info`，另有 `--serial`、`--adb`、`--abi`、`--api-jar`、`--service-apk`、`--apk`、`--probe-apk`、`--probe-wait`、`--no-reboot`、`--timeout`（600）、`--force` |
 
@@ -326,7 +328,7 @@ bash tools/android-car-boot/api/build.sh
 bash ./gradlew :tools:android-car-boot:service:assembleDebug
 bash ./gradlew :app:assembleDebug -PavdAbi
 
-# 2. 创建（幂等）并启动 AVD：psa_api28 @ emulator-5554，headless/writable-system/no-snapshot
+# 2. 创建（幂等）并启动 AVD：psa_api28 @ emulator-5554，窗口（--window=0 为 headless）/writable-system/no-snapshot
 bash tools/android-car-boot/avd/setup.sh
 bash tools/android-car-boot/avd/run.sh                 # 冷启动后等 sys.boot_completed=1
 

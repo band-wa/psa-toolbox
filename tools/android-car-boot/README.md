@@ -75,7 +75,7 @@ macOS 注意：`gradlew` 与各 `*.sh` 已提交可执行位（100755），`./gr
 ## 快速开始（官方 AVD）
 
 ```powershell
-# 创建（幂等，可跳过）并启动 AVD：psa_api28 @ 5554，无窗口、writable-system、no-snapshot
+# 创建（幂等，可跳过）并启动 AVD：psa_api28 @ 5554，窗口（-NoWindow 为 headless）、writable-system、no-snapshot
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/android-car-boot/avd/setup.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/android-car-boot/avd/run.ps1
 
@@ -122,7 +122,7 @@ bash tools/android-car-boot/api/build.sh
 bash ./gradlew :tools:android-car-boot:service:assembleDebug
 bash ./gradlew :app:assembleDebug -PavdAbi
 
-# 2. 创建（幂等）并启动 AVD：psa_api28 @ emulator-5554，headless、writable-system、no-snapshot
+# 2. 创建（幂等）并启动 AVD：psa_api28 @ emulator-5554，窗口（--window=0 为 headless）、writable-system、no-snapshot
 bash tools/android-car-boot/avd/setup.sh
 bash tools/android-car-boot/avd/run.sh
 

@@ -11,7 +11,8 @@ Port=5554
 SdkRoot=""
 NoSnapshot=1
 WritableSystem=1
-Window=0
+Window=1
+Gpu="auto"
 Stop=0
 Restart=0
 Status=0
@@ -27,7 +28,8 @@ Options (PowerShell spellings such as -AvdName / -Port / -Status are accepted):
   --port PORT            emulator console port, even, 5554-5584 (default: 5554)
   --sdk-root PATH        Android SDK root (default: $ANDROID_SDK_ROOT,
                          $ANDROID_HOME or ~/Library/Android/sdk)
-  --window               show the emulator window (default: headless)
+  --window[=BOOL]        show the emulator window (default: true; 0 = headless)
+  --gpu MODE             emulator -gpu mode (default: auto)
   --no-snapshot[=BOOL]   boot with -no-snapshot (default: true)
   --writable-system[=BOOL]  boot with -writable-system (default: true)
   --timeout-sec N        boot wait timeout (default: 300)
@@ -110,6 +112,14 @@ while [ "$argi" -lt "$argc" ]; do
             ;;
         window)
             if [ "$hasval" -eq 1 ]; then Window=$(set_bool_value "$val"); else Window=1; fi
+            ;;
+        gpu)
+            if [ "$hasval" -eq 0 ]; then
+                if [ "$argi" -ge "$argc" ]; then acb_fail "option $raw requires a value"; fi
+                val=${args[$argi]}
+                argi=$((argi + 1))
+            fi
+            Gpu=$val
             ;;
         stop)
             if [ "$hasval" -eq 1 ]; then acb_fail "option $raw does not take a value"; fi
@@ -256,7 +266,7 @@ start_avd() {
     fi
 
     local emu_args=("-avd" "$AvdName" "-port" "$Port"
-                    "-no-audio" "-no-boot-anim" "-gpu" "swiftshader_indirect")
+                    "-no-audio" "-no-boot-anim" "-gpu" "$Gpu")
     if [ "$Window" -eq 0 ]; then
         emu_args=("-no-window" "${emu_args[@]}")
     fi
