@@ -31,6 +31,7 @@ tools/aosp-car-stub/out/
 /tools/android-car-boot/build/
 /tools/android-car-boot/dist/
 /tools/android-car-boot/service/build/
+/tools/android-car-boot/bt-shim/build/
 /tools/android-car-boot/__pycache__/
 
 # android-car-boot 官方 AVD 底座：本机备份、快照与缓存

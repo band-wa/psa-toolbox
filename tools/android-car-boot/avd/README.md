@@ -32,7 +32,7 @@
 | 加速 | AEHD `2.2.0`（`extras;google;Android_Emulator_Hypervisor_Driver`） |
 | JDK | `<jdk-17>`（`setup.ps1` 默认值，用 `-JavaHome` 覆盖；sdkmanager/avdmanager 需要） |
 | AVD 设备档 | `automotive_1024p_landscape`：1920×720、density 213、4G RAM、8G data、auto、无音视频、无相机、键盘、无边框、4 核 |
-| bootclasspath jar | `tools/android-car-boot/api/build/android.car.jar` 12,341 B，sha256 `cb71ec77…6bf1d42b` |
+| bootclasspath jar | `tools/android-car-boot/api/build/android.car.jar` 19,859 B，sha256 `ba6408f5…04356fe4` |
 | 服务 APK | `tools/android-car-boot/service/build/outputs/apk/debug/service-debug.apk` 35,703 B，sha256 `aa17a87a…f47d8fdd` |
 | probe APK（可选，自备） | `verify/bootinject/out/probe-app.apk`，包 `com.bandwa.bootinject.probe`，logcat tag `CARPROBE`；不存在时跳过该项校验 |
 | APP APK（可选） | `app/build/outputs/apk/debug/app-debug.apk`，包 `com.bandwa.openadb`，需 `-PavdAbi` |
@@ -48,13 +48,13 @@
 | 加速 | 系统 Hypervisor.framework（HVF），无需安装；`emulator-check accel` 输出 `Hypervisor.Framework` |
 | JDK | JDK 17（`--java-home` 可覆盖；sdkmanager 需要） |
 | AVD 设备档 | `setup.sh` 直写 config.ini：1920×720、density 213、4G RAM、8G data、auto、无音视频、无相机、键盘、无边框、4 核、横屏 |
-| bootclasspath jar | `tools/android-car-boot/api/build/android.car.jar` 12,341 B，sha256 `cb71ec77…6bf1d42b`（与 Windows 相同） |
+| bootclasspath jar | `tools/android-car-boot/api/build/android.car.jar` 19,859 B，sha256 `ba6408f5…04356fe4`（与 Windows 相同） |
 | 服务 APK | `tools/android-car-boot/service/build/outputs/apk/debug/service-debug.apk` 24,903 B，sha256 `30af2683…c29d45e` |
 | APP APK（可选） | `app/build/outputs/apk/debug/app-debug.apk` 14,586,486 B，sha256 `886819b7…ff745eb4`，包 `com.bandwa.openadb` 5.3.4 |
 | probe APK（可选，自备） | 同 Windows：`verify/bootinject/out/probe-app.apk`；不存在时跳过该项校验 |
 
-> jar 与设备 ABI 无关，macOS 用 JDK 17 + build-tools 34.0.0 构建时与 Windows 产物相同（12,341 B /
-> `cb71ec77…`）；服务 APK 因 Gradle/AGP 环境不同而大小/指纹不同。脚本始终信任本地实际 sha256，
+> jar 与设备 ABI 无关，macOS 用 JDK 17 + build-tools 34.0.0 构建时与 Windows 产物相同（19,859 B /
+> `ba6408f5…`）；服务 APK 因 Gradle/AGP 环境不同而大小/指纹不同。脚本始终信任本地实际 sha256，
 > 只在日志里提示与基线指纹不同，不阻断构建与注入。
 
 注入成功的判据（`provision.py --verify` 会全部检查）：
@@ -323,8 +323,9 @@ PowerShell 风格（`-AvdName`）两种拼写；布尔型参数还接受 `1/true
 sdkmanager --install "platform-tools" "emulator" "build-tools;34.0.0" \
   "platforms;android-34" "system-images;android-28;default;arm64-v8a"
 
-# 1. 构建：api jar → 服务 APK →（可选）APP APK
+# 1. 构建：api jar → 蓝牙栈替身 jar → 服务 APK →（可选）APP APK
 bash tools/android-car-boot/api/build.sh
+bash tools/android-car-boot/bt-shim/build.sh
 bash ./gradlew :tools:android-car-boot:service:assembleDebug
 bash ./gradlew :app:assembleDebug -PavdAbi
 
@@ -342,6 +343,10 @@ bash tools/android-car-boot/avd/run.sh --status
 bash tools/android-car-boot/avd/run.sh --stop
 bash tools/android-car-boot/avd/snapshot.sh
 ```
+
+`run.sh` / `run.ps1` 在 AVD boot 完成后会自动 `adb root` 并 push/启动 `bt-shim`（注册模拟蓝牙栈
+`bluetooth_manager`，车机桌面 `com.android.launcher` 依赖它才不闪退；`bt-shim/build/bt-shim.jar`
+未构建时只告警不阻断；`--dry-run` / `-DryRun` 会跳过该步）。
 
 只读诊断与预览：`python3 tools/android-car-boot/avd/provision.py --print-device-info`、
 `setup.sh --verify-only`、`run.sh --dry-run`、`snapshot.sh --dry-run`、

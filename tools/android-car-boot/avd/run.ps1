@@ -158,6 +158,62 @@ function Show-Status {
     }
 }
 
+function Start-BtShim {
+    param([string]$TargetSerial = $Serial)
+    if ($DryRun) { return }
+    # The AVD image skips BluetoothService (ro.kernel.qemu=1); the launcher bluetooth
+    # card NPEs on a null adapter. Register a fake bluetooth_manager as root.
+    $jar = Join-Path $RepoRoot "tools\android-car-boot\bt-shim\build\bt-shim.jar"
+    if (-not (Test-Path $jar)) {
+        Write-Warn ("bt shim not built: " + $jar + " (run tools/android-car-boot/bt-shim/build.sh)")
+        return
+    }
+    $uid = Get-AdbText @("-s", $TargetSerial, "shell", "id -u")
+    if ($uid -ne "0") {
+        [void](Get-AdbText @("-s", $TargetSerial, "root"))
+        Start-Sleep -Seconds 1
+        $deadline = (Get-Date).AddSeconds(20)
+        while ((Get-Date) -lt $deadline) {
+            if ((Get-AdbText @("-s", $TargetSerial, "get-state")) -eq "device") { break }
+            Start-Sleep -Milliseconds 500
+        }
+        $uid = Get-AdbText @("-s", $TargetSerial, "shell", "id -u")
+        if ($uid -ne "0") {
+            Write-Warn ("bt shim: adb root failed (uid=" + $uid + "), skipped")
+            return
+        }
+    }
+    $check = Get-AdbText @("-s", $TargetSerial, "shell", "service", "check", "bluetooth_manager")
+    if ($check -match ": found") {
+        Write-Step "bt shim: bluetooth_manager already registered"
+        return
+    }
+    $pushExit = -1
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        & $AdbExe -s $TargetSerial push $jar /data/local/tmp/bt-shim.jar 2>$null | Out-Null
+        $pushExit = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $prev
+    }
+    if ($pushExit -ne 0) {
+        Write-Warn "bt shim: push failed"
+        return
+    }
+    [void](Get-AdbText @("-s", $TargetSerial, "shell", "CLASSPATH=/data/local/tmp/bt-shim.jar app_process /system/bin com.bandwa.vcarlib.BtShim >/dev/null 2>&1 &"))
+    $deadline = (Get-Date).AddSeconds(10)
+    while ((Get-Date) -lt $deadline) {
+        $check = Get-AdbText @("-s", $TargetSerial, "shell", "service", "check", "bluetooth_manager")
+        if ($check -match ": found") {
+            Write-Step "bt shim: bluetooth_manager registered"
+            return
+        }
+        Start-Sleep -Milliseconds 500
+    }
+    Write-Warn "bt shim: bluetooth_manager registration failed"
+}
+
 function Start-Avd {
     if (-not (Test-Path $EmulatorExe)) { Fail ("emulator not found: " + $EmulatorExe) }
     if (-not (Test-Path $AdbExe)) { Fail ("adb not found: " + $AdbExe) }
@@ -165,7 +221,21 @@ function Start-Avd {
     $instances = @(Get-EmulatorInstance)
     if ($instances.Count -gt 0) {
         $p = $instances[0]
-        Write-Step ("already running on emulator-" + (Get-InstancePort $p) + "; nothing to do")
+        $runningSerial = "emulator-" + (Get-InstancePort $p)
+        Write-Step ("already running on " + $runningSerial + "; nothing to do")
+        # May have been started with another -Port: use the actual instance serial.
+        $boot = ""
+        $deadline = (Get-Date).AddSeconds(60)
+        while ((Get-Date) -lt $deadline) {
+            $boot = Get-AdbText @("-s", $runningSerial, "shell", "getprop", "sys.boot_completed")
+            if ($boot -eq "1") { break }
+            Start-Sleep -Seconds 2
+        }
+        if ($boot -eq "1") {
+            Start-BtShim -TargetSerial $runningSerial
+        } else {
+            Write-Warn "already running but sys.boot_completed != 1; bt shim skipped"
+        }
         return
     }
     if (($Port % 2) -ne 0) { Fail "-Port must be even (5554, 5556, ...)" }
@@ -237,6 +307,7 @@ function Start-Avd {
     } else {
         Write-Step "adb shell is root"
     }
+    Start-BtShim
 }
 
 # ---------------------------------------------------------------------------
