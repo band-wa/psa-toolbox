@@ -36,7 +36,7 @@ DESIRED_VALUES=(
     "4096M"
     "8G"
     "yes"
-    "swiftshader_indirect"
+    "auto"
     "no"
     "no"
     "none"
