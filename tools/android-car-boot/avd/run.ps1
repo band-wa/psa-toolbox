@@ -158,6 +158,20 @@ function Show-Status {
     }
 }
 
+function Ensure-AdbRoot {
+    param([string]$TargetSerial = $Serial)
+    $uid = Get-AdbText @("-s", $TargetSerial, "shell", "id -u")
+    if ($uid -eq "0") { return $true }
+    [void](Get-AdbText @("-s", $TargetSerial, "root"))
+    Start-Sleep -Seconds 1
+    $deadline = (Get-Date).AddSeconds(20)
+    while ((Get-Date) -lt $deadline) {
+        if ((Get-AdbText @("-s", $TargetSerial, "get-state")) -eq "device") { break }
+        Start-Sleep -Milliseconds 500
+    }
+    return ((Get-AdbText @("-s", $TargetSerial, "shell", "id -u")) -eq "0")
+}
+
 function Start-BtShim {
     param([string]$TargetSerial = $Serial)
     if ($DryRun) { return }
@@ -168,20 +182,10 @@ function Start-BtShim {
         Write-Warn ("bt shim not built: " + $jar + " (run tools/android-car-boot/bt-shim/build.sh)")
         return
     }
-    $uid = Get-AdbText @("-s", $TargetSerial, "shell", "id -u")
-    if ($uid -ne "0") {
-        [void](Get-AdbText @("-s", $TargetSerial, "root"))
-        Start-Sleep -Seconds 1
-        $deadline = (Get-Date).AddSeconds(20)
-        while ((Get-Date) -lt $deadline) {
-            if ((Get-AdbText @("-s", $TargetSerial, "get-state")) -eq "device") { break }
-            Start-Sleep -Milliseconds 500
-        }
+    if (-not (Ensure-AdbRoot $TargetSerial)) {
         $uid = Get-AdbText @("-s", $TargetSerial, "shell", "id -u")
-        if ($uid -ne "0") {
-            Write-Warn ("bt shim: adb root failed (uid=" + $uid + "), skipped")
-            return
-        }
+        Write-Warn ("bt shim: adb root failed (uid=" + $uid + "), skipped")
+        return
     }
     $check = Get-AdbText @("-s", $TargetSerial, "shell", "service", "check", "bluetooth_manager")
     if ($check -match ": found") {
@@ -214,6 +218,39 @@ function Start-BtShim {
     Write-Warn "bt shim: bluetooth_manager registration failed"
 }
 
+function Ensure-Locale {
+    param([string]$TargetSerial = $Serial)
+    if ($DryRun) { return }
+    if (-not (Ensure-AdbRoot $TargetSerial)) {
+        Write-Warn "locale: adb root failed; skipped"
+        return
+    }
+    $locale = Get-AdbText @("-s", $TargetSerial, "shell", "getprop", "persist.sys.locale")
+    if ($locale -eq "zh-CN") {
+        Write-Step "locale: zh-CN already set"
+        return
+    }
+    [void](Get-AdbText @("-s", $TargetSerial, "shell", "setprop", "persist.sys.locale", "zh-CN"))
+    [void](Get-AdbText @("-s", $TargetSerial, "shell", "stop"))
+    Start-Sleep -Seconds 2
+    $deadline = (Get-Date).AddSeconds(30)
+    while ((Get-Date) -lt $deadline) {
+        if ((Get-AdbText @("-s", $TargetSerial, "get-state")) -eq "device") { break }
+        Start-Sleep -Milliseconds 500
+    }
+    [void](Get-AdbText @("-s", $TargetSerial, "shell", "start"))
+    $deadline = (Get-Date).AddSeconds(60)
+    while ((Get-Date) -lt $deadline) {
+        $check = Get-AdbText @("-s", $TargetSerial, "shell", "service", "check", "activity")
+        if ($check -match ": found") {
+            Write-Step "locale: zh-CN (framework restarted)"
+            return
+        }
+        Start-Sleep -Milliseconds 500
+    }
+    Write-Warn "locale: zh-CN written but framework did not restart within 60 s"
+}
+
 function Start-Avd {
     if (-not (Test-Path $EmulatorExe)) { Fail ("emulator not found: " + $EmulatorExe) }
     if (-not (Test-Path $AdbExe)) { Fail ("adb not found: " + $AdbExe) }
@@ -233,8 +270,9 @@ function Start-Avd {
         }
         if ($boot -eq "1") {
             Start-BtShim -TargetSerial $runningSerial
+            Ensure-Locale -TargetSerial $runningSerial
         } else {
-            Write-Warn "already running but sys.boot_completed != 1; bt shim skipped"
+            Write-Warn "already running but sys.boot_completed != 1; bt shim and locale skipped"
         }
         return
     }
@@ -293,21 +331,14 @@ function Start-Avd {
     }
     Write-Step ("boot completed: " + $Serial)
 
-    $rootOut = Get-AdbText @("-s", $Serial, "root")
-    Write-Step ("adb root: " + $rootOut)
-    Start-Sleep -Seconds 1
-    $deadline = (Get-Date).AddSeconds(30)
-    while ((Get-Date) -lt $deadline) {
-        if ((Get-AdbText @("-s", $Serial, "get-state")) -eq "device") { break }
-        Start-Sleep -Milliseconds 500
-    }
-    $uid = Get-AdbText @("-s", $Serial, "shell", "id -u")
-    if ($uid -ne "0") {
-        Write-Warn ("adb shell uid is '" + $uid + "' (expected 0); is this a userdebug image?")
-    } else {
+    if (Ensure-AdbRoot $Serial) {
         Write-Step "adb shell is root"
+    } else {
+        $uid = Get-AdbText @("-s", $Serial, "shell", "id -u")
+        Write-Warn ("adb shell uid is '" + $uid + "' (expected 0); is this a userdebug image?")
     }
     Start-BtShim
+    Ensure-Locale
 }
 
 # ---------------------------------------------------------------------------

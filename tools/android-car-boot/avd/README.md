@@ -344,9 +344,10 @@ bash tools/android-car-boot/avd/run.sh --stop
 bash tools/android-car-boot/avd/snapshot.sh
 ```
 
-`run.sh` / `run.ps1` 在 AVD boot 完成后会自动 `adb root` 并 push/启动 `bt-shim`（注册模拟蓝牙栈
-`bluetooth_manager`，车机桌面 `com.android.launcher` 依赖它才不闪退；`bt-shim/build/bt-shim.jar`
-未构建时只告警不阻断；`--dry-run` / `-DryRun` 会跳过该步）。
+`run.sh` / `run.ps1` 在 AVD boot 完成后会自动 `adb root`、push/启动 `bt-shim`（注册模拟蓝牙栈
+`bluetooth_manager`，车机桌面 `com.android.launcher` 依赖它才不闪退），并把系统语言设为简体中文
+（`persist.sys.locale=zh-CN`，非 zh-CN 时重启 framework 使其生效；`bt-shim/build/bt-shim.jar` 未构建时
+只告警不阻断；`--dry-run` / `-DryRun` 会跳过这些步骤）。
 
 只读诊断与预览：`python3 tools/android-car-boot/avd/provision.py --print-device-info`、
 `setup.sh --verify-only`、`run.sh --dry-run`、`snapshot.sh --dry-run`、

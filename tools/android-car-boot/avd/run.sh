@@ -221,6 +221,20 @@ stop_avd() {
     acb_stop_avd "$AvdName" 60 "emulator for AVD $AvdName is not running"
 }
 
+# adb root 会重启 adbd，最多等 20 s 重新上线；已 root 时直接返回。
+ensure_adb_root() {
+    local target="${1:-$Serial}" uid deadline
+    uid=$(acb_adb_text -s "$target" shell id -u | tr -d '[:space:]')
+    if [ "$uid" = "0" ]; then return 0; fi
+    acb_adb_text -s "$target" root >/dev/null || true
+    deadline=$(( $(date +%s) + 20 ))
+    while [ "$(date +%s)" -lt "$deadline" ]; do
+        if [ "$(acb_adb_text -s "$target" get-state | tr -d '[:space:]')" = "device" ]; then break; fi
+        sleep 1
+    done
+    [ "$(acb_adb_text -s "$target" shell id -u | tr -d '[:space:]')" = "0" ]
+}
+
 # 模拟环境蓝牙栈替身：AVD 按 ro.kernel.qemu=1 跳过 BluetoothService，launcher 蓝牙卡片
 # 在 adapter 为 null 时空指针闪退；以 root 注册 bluetooth_manager 兜底。
 ensure_bt_shim() {
@@ -233,21 +247,11 @@ ensure_bt_shim() {
         acb_warn "bt shim 未构建（${jar}）；先运行 bash tools/android-car-boot/bt-shim/build.sh"
         return 0
     fi
-    local uid deadline
-    uid=$(acb_adb_text -s "$target" shell id -u | tr -d '[:space:]')
-    if [ "$uid" != "0" ]; then
-        # adb root 会重启 adbd，最多等 20 s 重新上线
-        acb_adb_text -s "$target" root >/dev/null || true
-        deadline=$(( $(date +%s) + 20 ))
-        while [ "$(date +%s)" -lt "$deadline" ]; do
-            if [ "$(acb_adb_text -s "$target" get-state | tr -d '[:space:]')" = "device" ]; then break; fi
-            sleep 1
-        done
+    local uid
+    if ! ensure_adb_root "$target"; then
         uid=$(acb_adb_text -s "$target" shell id -u | tr -d '[:space:]')
-        if [ "$uid" != "0" ]; then
-            acb_warn "bt shim: adb root 未生效（uid=$uid），跳过注册"
-            return 0
-        fi
+        acb_warn "bt shim: adb root 未生效（uid=$uid），跳过注册"
+        return 0
     fi
     if acb_adb_text -s "$target" shell service check bluetooth_manager 2>/dev/null | grep -q ": found"; then
         acb_step "bt shim: bluetooth_manager already registered（重建 jar 后需重启 AVD 才更新）"
@@ -268,6 +272,42 @@ ensure_bt_shim() {
         sleep 1
     done
     acb_warn "bt shim: bluetooth_manager 注册失败（launcher 蓝牙卡片可能仍会崩溃）"
+}
+
+# 默认系统语言：镜像按 ro.product.locale(en-US) 启动，framework 只在启动时读 persist.sys.locale。
+# 未设置为 zh-CN 时写入并重启 framework；bt-shim 是原生服务，不受框架重启影响。
+ensure_locale() {
+    if [ "$DryRun" -eq 1 ]; then
+        return 0
+    fi
+    local target="${1:-$Serial}" locale deadline
+    if ! ensure_adb_root "$target"; then
+        acb_warn "locale: adb root 未生效，跳过语言设置"
+        return 0
+    fi
+    locale=$(acb_adb_text -s "$target" shell getprop persist.sys.locale | tr -d '[:space:]')
+    if [ "$locale" = "zh-CN" ]; then
+        acb_step "locale: zh-CN already set"
+        return 0
+    fi
+    acb_adb_text -s "$target" shell setprop persist.sys.locale zh-CN
+    acb_adb_text -s "$target" shell stop >/dev/null 2>&1 || true
+    sleep 2
+    deadline=$(( $(date +%s) + 30 ))
+    while [ "$(date +%s)" -lt "$deadline" ]; do
+        if [ "$(acb_adb_text -s "$target" get-state | tr -d '[:space:]')" = "device" ]; then break; fi
+        sleep 1
+    done
+    acb_adb_text -s "$target" shell start >/dev/null 2>&1 || true
+    deadline=$(( $(date +%s) + 60 ))
+    while [ "$(date +%s)" -lt "$deadline" ]; do
+        if acb_adb_text -s "$target" shell service check activity 2>/dev/null | grep -q ": found"; then
+            acb_step "locale: zh-CN（framework 已重启）"
+            return 0
+        fi
+        sleep 1
+    done
+    acb_warn "locale: zh-CN 已写入，但 framework 未在 60 s 内重启完成"
 }
 
 # 等 adb 在线且 sys.boot_completed 恰为 1；失败时写入 BOOT_ERR。
@@ -316,8 +356,9 @@ start_avd() {
         done
         if [ "$boot" = "1" ]; then
             ensure_bt_shim "$running_serial"
+            ensure_locale "$running_serial"
         else
-            acb_warn "已运行的实例 sys.boot_completed != 1，跳过 bt shim"
+            acb_warn "已运行的实例 sys.boot_completed != 1，跳过 bt shim 与语言设置"
         fi
         return 0
     fi
@@ -370,24 +411,15 @@ start_avd() {
     fi
     acb_step "boot completed: $Serial"
 
-    local root_out
-    root_out=$(acb_adb_text -s "$Serial" root)
-    acb_step "adb root: $root_out"
-    sleep 1
-    local deadline state uid
-    deadline=$(( $(date +%s) + 30 ))
-    while [ "$(date +%s)" -lt "$deadline" ]; do
-        state=$(acb_adb_text -s "$Serial" get-state | tr -d '[:space:]')
-        if [ "$state" = "device" ]; then break; fi
-        sleep 1
-    done
-    uid=$(acb_adb_text -s "$Serial" shell id -u | tr -d '[:space:]')
-    if [ "$uid" != "0" ]; then
-        acb_warn "adb shell uid is '$uid' (expected 0); is this a userdebug image?"
-    else
+    local uid
+    if ensure_adb_root "$Serial"; then
         acb_step "adb shell is root"
+    else
+        uid=$(acb_adb_text -s "$Serial" shell id -u | tr -d '[:space:]')
+        acb_warn "adb shell uid is '$uid' (expected 0); is this a userdebug image?"
     fi
     ensure_bt_shim "$Serial"
+    ensure_locale "$Serial"
 }
 
 if [ "$Stop" -eq 1 ]; then
