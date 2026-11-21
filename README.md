@@ -27,6 +27,10 @@ PSA 工具箱是一个运行在标致 / 雪铁龙车机（Android 9）上的系�
 
 项目起步于个人车机折腾，已在 PSA 车型的 Android 9 固件上日常使用；如果你使用同代车机，欢迎试用、反馈 Issue 或参与改进。
 
+## 衍生项目
+
+- [psa-toolbox-mapping](https://github.com/C19991221/psa-toolbox-mapping) —— 由天才大熊猫开发的扩展版本，支持全按键修改和更多功能。
+
 ## 功能特性
 
 工具箱包含 9 个功能模块：
@@ -220,11 +224,16 @@ adb install -r app/build/outputs/apk/release/app-release.apk
 
 ## 贡献指南
 
-欢迎 Issue、PR 与车型适配反馈。PR 请以 `dev` 分支为目标分支，不要直接向 `main` 提交：
+欢迎通过 Issue 反馈问题，也欢迎代码贡献。建议按改动性质选择提交方式：
+
+- **功能性改动与大型修改**（新增功能、重构等）：建议先 fork 本仓库，在自己的仓库中开发并验证；成熟后可以继续维护自己的分支，或整理成 PR 提交合并。
+- **修复性改动**（缺陷修复、文档与小型改进）：欢迎直接提 PR，目标分支为 `main`。
+
+无论采用哪种方式，提交前请尽量确认：
 
 1. 提交信息遵循 `type(scope): 摘要`（如 `fix(service): 修复投屏偏移`），与现有提交风格保持一致；
-2. 提交前请跑通 `./gradlew :core:testDebugUnitTest :service:testDebugUnitTest :app:testDebugUnitTest` 与 `./gradlew :app:assembleRelease`；
-3. 不要提交 OTA 私有地址等敏感信息；
+2. 跑通 `./gradlew :core:testDebugUnitTest :service:testDebugUnitTest :app:testDebugUnitTest` 与 `./gradlew :app:assembleRelease`；
+3. 不要提交 OTA 私有地址、AppKey 等敏感信息；
 4. 代码风格与注释语言保持与现有代码一致（中文注释、4 空格缩进），注释遵循 [docs/comment-style.md](docs/comment-style.md) 的极简规范。
 
 ## 致谢
