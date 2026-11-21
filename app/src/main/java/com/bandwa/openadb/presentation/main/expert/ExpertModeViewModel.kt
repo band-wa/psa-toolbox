@@ -3,22 +3,17 @@ package com.bandwa.openadb.presentation.main.expert
 import android.content.Context
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.bandwa.openadb.util.HackMtkLog.enableMtkLog
-import com.bandwa.openadb.util.HackMtkLog.isMtkLogEnable
 import com.bandwa.openadb.util.OpenSysSetting.openRunningServices
+import com.bandwa.openadb.util.StorageOptimize
 import com.bandwa.openadb.util.Utils.APP_AUTO_GRANT_KEY
 import com.bandwa.openadb.util.Utils.COMPAT_MODE_KEY
 import com.bandwa.openadb.util.Utils.PREFS_NAME
 import com.bandwa.openadb.service.ServiceLauncher.showQRCode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -36,14 +31,13 @@ class ExpertModeViewModel @Inject constructor(
         restoreSettings()
     }
 
-    private fun restoreSettings() = viewModelScope.launch {
-        val mtkLogEnabled = withContext(Dispatchers.IO) { isMtkLogEnable() }
+    private fun restoreSettings() {
         _uiState.update {
             it.copy(
                 isListMod = localPrefs.getBoolean(KEY_LIST_MOD, false),
                 isCompatMode = corePrefs.getBoolean(COMPAT_MODE_KEY, false),
                 isAppAutoGrant = corePrefs.getBoolean(APP_AUTO_GRANT_KEY, true),
-                isMtkLogEnabled = mtkLogEnabled,
+                isStorageOptimized = StorageOptimize.isEnabled(context),
                 shouldRunUserSh = localPrefs.getBoolean(KEY_RUN_USER_SH, false),
             )
         }
@@ -76,13 +70,13 @@ class ExpertModeViewModel @Inject constructor(
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
 
-    fun setMtkLogEnabled(enabled: Boolean) {
-        enableMtkLog(enabled)
-        _uiState.update { it.copy(isMtkLogEnabled = enabled) }
+    fun setStorageOptimized(enabled: Boolean) {
+        StorageOptimize.setEnabled(context, enabled)
+        _uiState.update { it.copy(isStorageOptimized = enabled) }
         val message = if (enabled) {
-            "调试日志已开启"
+            "存储空间优化已开启"
         } else {
-            "调试日志已关闭"
+            "存储空间优化已关闭"
         }
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }

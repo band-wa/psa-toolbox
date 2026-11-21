@@ -31,6 +31,8 @@ object Utils {
 
     const val APP_AUTO_GRANT_KEY = "app_auto_grant"
 
+    const val STORAGE_OPTIMIZE_KEY = "storage_optimize"
+
     const val FUEL_PROMPT_KEY = "fuel_prompt_enabled"
     const val FUEL_TANK_KEY = "fuel_tank_liters"
     const val FUEL_TANK_DEFAULT = 53
