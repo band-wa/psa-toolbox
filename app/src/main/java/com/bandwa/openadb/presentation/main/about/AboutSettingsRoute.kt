@@ -61,7 +61,7 @@ fun AboutSettingsScreen(
             .padding(top = 40.dp, bottom = 20.dp)
             .verticalScroll(scrollState)
     ) {
-        SelectionText(text = "支持开发组")
+        SelectionText(text = "支持开发")
         Row(
             modifier = Modifier
                 .fillMaxWidth()
