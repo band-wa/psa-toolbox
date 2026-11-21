@@ -167,15 +167,15 @@ adb shell am broadcast -n com.android.car/.ControlReceiver -a com.android.car.CO
 必须是带 `CREATOR` 的新版本，**api jar 与 service APK 必须成对部署**，否则厂商反序列化
 `CarPropertyValue` 会抛 `NoSuchFieldError: CREATOR` 而 FATAL。
 
-此外，api 里的 `android.car.Car.getCarManager()` 对 `cabin`/`hvac`/`sensor`/`audio`/
-`mcu_service`/`car_tbox_service`/`info` 返回**厂商 APK 自带的 car-lib 管理器类**（反射构造，
-非 null）。这些类是**真实 AOSP 实现**，内部会 `new CarPropertyManager(...)` 并调用 AOSP 方法，
-所以 api jar 必须带 AOSP 超集成员（`getIntArrayProperty`/`getByteArrayProperty`/
-`getFloatArrayProperty`/`getPropertyList(ArraySet)` 等，见 `tools/android-car-boot/api/README.md`）。
-属性读写最终落到本服务端属性垫片的同一 Binder（`getCarService("cabin"/"mcu_service"/…)` 也返回
-属性垫片），因此能读到 `CarState`/厂商属性映射表中的虚拟值；但**没有事件回调**、没有真实
-MCU/ECU 语义（按键、空调、真实音量等仍不会真正生效）。厂商后续版本若读取更多属性 ID 或依赖
-事件，需扩展 `VendorServiceShims` 映射表。
+此外，`android.car` 的管理器类在模拟环境里由 **bootclasspath 的 api jar** 提供（精简实现，
+见 `tools/android-car-boot/api/README.md`）：`Car.getCarManager()` 对 `cabin`/`hvac`/`sensor`/
+`audio`/`mcu_service`/`car_tbox_service`/`info` 反射构造到本 jar 的管理器，它们内部
+`new CarPropertyManager(...)` 走 `0x1000` 段协议落到本服务端属性垫片，因此能读到
+`CarState`/厂商属性映射表中的虚拟值。只实现已验证厂商用到的子集（launcher 实测覆盖
+`CarSensorManager`/`CarHvacManager`/`CarCabinManager`/`CarMcuManager`/`CarTBoxManager`/
+`CarAudioManager`/`ICarProperty`/`ICarAudio`）；厂商后续版本若调用更多成员，会以
+`NoSuchMethodError` 暴露在 FATAL 栈里，按栈补 api jar 即可。**事件回调不会投递**（服务端
+`registerListener` 只记日志），且没有真实 MCU/ECU 语义（按键、空调、真实音量等仍不会真正生效）。
 
 ## 兼容性结论（模拟器 Android 9 / SDK 28，vendor `com.cusc.misc` v202403121801）
 
@@ -197,6 +197,26 @@ jar + `/system/app/CarService/CarService.apk` = 本 APK）并重启后：
 已知限制：服务端不主动发 `TX_EVENT`，厂商 UI 的按键/空调等异步事件不会真正刷新；所有属性值为
 虚拟数据（无真实 MCU/ECU 语义）；MQTT 等服务使用虚拟 VIN 连云，云端账号校验类响应属预期；包名
 `com.android.car` 与真车系统 CarService 冲突，仅限模拟器/开发环境使用。
+
+## 兼容性结论（车机桌面 `com.android.launcher` v202403121759）
+
+同一套模拟环境（bootclasspath 版 api jar + 本 CarService APK）下，车机桌面
+`com.android.launcher`（versionCode 1190、system uid、AOSP platform 测试签名）可正常启动并渲染桌面：
+
+- 桌面蓝牙卡片在 `BluetoothStateManager.getConnectedDevice()` 里直接调用
+  `BluetoothAdapter.getDefaultAdapter().isEnabled()`；AVD 无蓝牙栈（`ro.kernel.qemu=1` 时
+  SystemServer 跳过 BluetoothService）→ 空指针闪退。由 `bt-shim` 解决：`avd/run.sh` /
+  `avd/run.ps1` 在 boot 后以
+  root 注册假 `bluetooth_manager`（`registerAdapter` 回 null），`isEnabled()` 恒 false，桌面走
+  「未连接」分支。
+- 厂商 car-lib（`com.cusc.api` / `com.platform.bdstar`）直接引用 `android.car.hardware.*` 类；
+  api jar 已补齐 `CarSensorManager`/`CarHvacManager`/`CarCabinManager`/`CarMcuManager`/
+  `CarTBoxManager`/`CarAudioManager` 等（见 `api/README.md`），布局到空调/蓝牙卡片不再
+  `NoClassDefFoundError`。
+- 验证：`am start -n com.android.launcher/com.android.launcher2.Launcher` 后进程存活、crash buffer
+  为空，桌面卡片（导航/音乐/蓝牙电话/常用应用）正常渲染；`provision.py --verify` 全绿。
+- 已知限制：桌面若读取更多 AOSP 类/属性仍可能缺类，按 FATAL 栈补 api jar 即可；本环境仍无真实
+  MCU/ECU 语义，事件回调不投递。
 
 ## 验证
 
@@ -231,7 +251,7 @@ bash verify/vendor-icar-test.sh
   同一版本构建（`tools/android-car-boot/api` + `tools/android-car-boot/service`），否则
   `CarPropertyValue`/`CarPropertyConfig` 的 Parcel 编解码会不一致；且 api jar 必须带 AOSP
   超集成员（`Car` 两个静态 helper、`CarPropertyConfig.getAccess/getConfigArray`、
-  `CarPropertyManager` 的 10 个 AOSP 方法、`TYPE_FLOAT_ARRAY`），否则厂商真实 AOSP 管理器类
+  `CarPropertyManager` 的 10 个 AOSP 方法、`TYPE_FLOAT_ARRAY`），否则厂商 car-lib 代码
   会抛 `NoSuchMethodError`。ABI 结论：`check_abi.sh` 7/7、缺失 0、超集新增 28；设备侧 smali
   引用扫描缺失 0。
 - 若客户端 `targetSdk >= 30` 且显式绑定返回 false，检查包可见性：

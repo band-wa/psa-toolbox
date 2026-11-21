@@ -14,6 +14,28 @@ fun deployValue(key: String): String = rootProject.extra[key] as String
 fun buildConfigString(value: String): String =
     "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
+val donationQrOverride = deployValue("deploy.donationQr")
+val defaultDonationQrResDir = file("src/donationQr/res")
+val donationQrResDir = layout.buildDirectory.dir("generated/donationQr")
+
+val syncDonationQr = if (donationQrOverride.isBlank()) {
+    null
+} else {
+    val source = rootProject.file(donationQrOverride)
+    require(source.isFile) { "psa.donationQr 指向的图片不存在：$source" }
+    tasks.register<Sync>("syncDonationQr") {
+        from(source) { rename { "qr_code." + source.extension.ifEmpty { "png" } } }
+        into(donationQrResDir.map { it.dir("drawable") })
+    }
+}
+
+if (syncDonationQr != null) {
+    tasks.matching {
+        it.name.endsWith("Resources") || it.name.endsWith("SourceSetPaths") ||
+            it.name.contains("Lint") || it.name.contains("lint")
+    }.configureEach { dependsOn(syncDonationQr) }
+}
+
 android {
     namespace = "com.bandwa.openadb"
     compileSdk = 34
@@ -23,7 +45,7 @@ android {
         minSdk = 24
         targetSdk = 25
         versionCode = 10
-        versionName = "5.3.3"
+        versionName = "5.3.4"
         ndk {
             // x86_64 仅用于 Google 官方模拟器（android-car-boot AVD）联调：
             // 构建时加 -PavdAbi 才打包 x86_64，正式包保持 arm64-v8a
@@ -115,6 +137,10 @@ android {
         unitTests.isReturnDefaultValues = true
     }
 }
+
+android.sourceSets.getByName("main").res.srcDir(
+    if (syncDonationQr != null) donationQrResDir else defaultDonationQrResDir
+)
 
 val hookAssetsDir = layout.buildDirectory.dir("generated/hookAssets")
 val syncHookDex = tasks.register<Copy>("syncHookDex") {

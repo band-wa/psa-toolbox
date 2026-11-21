@@ -15,7 +15,7 @@ APP 的 dex 里虽然仍带着桩类，但运行时类查找顺序 bootclasspath
 
 ```
 tools/android-car-boot/api/
-├── src/android/car/...                      # 6 个 Java 源文件（与桩同名、同包、同 ABI）
+├── src/android/car/...                      # 24 个 Java 源文件（桩的 ABI 超集 + 模拟车机桌面所需的 AOSP 类）
 ├── build.sh                                 # 构建：javac(--release 8) -> d8 -> jar（Windows/macOS 自动选择工具链）
 ├── check_abi.sh                             # 与参考桩 jar 的 ABI 兼容性核对
 ├── README.md
@@ -30,7 +30,7 @@ tools/android-car-boot/api/
 `tools/android-car-boot/protocol/java` 下的同一份源码（服务端 APK 也编译同一份），保证
 客户端/服务端 wire format 不会漂移。
 
-## 类清单（jar 内 16 个 dex 类）
+## 类清单（jar 内 53 个 dex 类）
 
 | dex 类 | 说明 |
 | --- | --- |
@@ -45,7 +45,19 @@ tools/android-car-boot/api/
 | `android.car.hardware.property.CarPropertyManager$ListenerCallback`（+`$1`） | 服务端事件回调 Binder |
 | `com.bandwa.vcarlib.BootCarProtocol` | boot 协议常量与 Parcel 编解码（事务码 >= 0x1000） |
 
-> **Parcelable 编码（给 AOSP 车机应用用）**：`CarPropertyValue` / `CarPropertyConfig`
+模拟车机桌面补充的类：`ICar`、`VehiclePropertyIds`、`CarInfoManager`、`hardware.CarSensorEvent`
+（+`EnvironmentData`）、
+`hardware.CarSensorManager`（+`OnSensorChangedListener`）、`hardware.cabin.CarCabinManager`、
+`hardware.hvac.CarHvacManager`、`hardware.mcu.CarMcuManager`、`hardware.tbox.CarTBoxManager`、
+`hardware.property.CarPropertyEvent`/`ICarProperty`/`ICarPropertyEventListener`、
+`media.CarAudioManager`/`CarAudioPatchHandle`/`ICarAudio`/`ICarVolumeCallback`、
+`tbox.aidl.ITboxInterface`/`ITboxCallBackInterface`/`INetworkSettingCallBackInterface`
+（占位：无 TBox 硬件，`tboxIsExist()` 恒 false、回调不投递）。
+管理器把读写委托给本 jar 的 `CarPropertyManager`（未知厂商属性抛出的 `IllegalArgumentException`
+在此吞掉），回调只保存引用（服务端不发事件）；AIDL 类按 `VendorServiceShims` 的事务码布局实现
+Proxy/Stub。
+
+> **Parcelable 编码**（供 AOSP 车机应用解码）：`CarPropertyValue` / `CarPropertyConfig`
 > **没有** `implements Parcelable`（桩的 ABI 基准类头不含该接口，加了会破坏 `check_abi.sh`），
 > 按「只增成员」的方式提供 `describeContents()`、`writeToParcel(Parcel, int)`、静态
 > `readFromParcel(Parcel)` 与 `public static final Parcelable.Creator<...> CREATOR`。
@@ -59,11 +71,13 @@ tools/android-car-boot/api/
 > （DOTE 配置）、`TYPE_INTEGER_ARRAY=7`（仪表个性化 / AVM 开关等 `Integer[]`）、
 > `TYPE_FLOAT_ARRAY=8`（AOSP 浮点数组属性）；自定义协议事务仍只用 `0..5`。
 >
-> **AOSP car-lib API 超集**：设备上的厂商车机 APK（`com.cusc.misc`）自带**真实 AOSP 实现**
-> 的 `CarCabinManager`/`CarMcuManager`/`CarSensorManager`/`CarTBoxManager`/`CarHvacManager`
-> 等类，它们内部 `new CarPropertyManager(binder, handler, false, tag)` 并调用 AOSP 的
-> `CarPropertyManager` 方法，而 bootclasspath 会用本 jar 的实现覆盖该类。若缺成员，厂商会在
-> 构造/读取时抛 `NoSuchMethodError`。因此本 jar 按「只增不删」补齐了下列 AOSP 成员：
+> **bootclasspath 里的 android.car**：车机上的 `android.car.*` 由 bootclasspath 提供，厂商车机
+> APK（`com.cusc.misc`）与车机桌面（`com.android.launcher`）都不打包这些类。注入本 jar 后，
+> `CarCabinManager`/`CarMcuManager`/`CarSensorManager`/`CarTBoxManager`/`CarHvacManager` 等由
+> 本 jar 的**精简实现**提供（见上段），其内部委托本 jar 的 `CarPropertyManager`，走 `0x1000`
+> 段自定义协议访问服务端属性垫片。厂商 APK 自带的 `com.android.car.manager.*` 封装类仍由 APK
+> 加载，其中对 `android.car.hardware.*` 的引用会解析到本 jar。为兼容这类代码，本 jar 按
+> 「只增不删」保留了下列 AOSP 成员：
 >
 > - `CarPropertyManager`：`(IBinder, Handler, boolean, String)` 构造、`getIntArrayProperty`、
 >   `getFloatArrayProperty`、`getByteArrayProperty`、`getPropertyList(ArraySet)`、
@@ -96,9 +110,10 @@ tools/android-car-boot/api/
   `(IBinder, Context, Handler)`（无此构造则 `(IBinder, Context)`）构造，binder 通过
   `ICar.getCarService(name)`（事务码 2）从服务端取。结果按服务名缓存，断连/死亡时清空；
   加载不到（宿主 APK 未打包对应类）或未知服务名时 `Log.w` 并返回 `null`。
-  厂商 APK 自带的是真实 AOSP 实现：它们内部 `new CarPropertyManager(...)`，
-  通过上面补齐的 AOSP 成员 + 服务端属性垫片读取 `CarState`/厂商属性映射值，因此
-  `getCarManager(cabin)` 等不再返回 null 也不会 NPE；事件回调仍不会触发（服务端不发事件）。
+  模拟环境里这些类由本 jar（bootclasspath）提供：管理器内部 `new CarPropertyManager(...)`
+  走服务端属性垫片读取 `CarState`/厂商属性映射值，因此 `getCarManager(cabin)` 等返回非 null；
+  只实现已验证子集，事件回调不会触发（服务端不发事件）。宿主 APK 若自带同名类，dex 会优先于
+  bootclasspath 解析到 APK 内的版本。
 - `disconnect()`：置空状态（含管理器缓存）、`unbindService`、`unlinkToDeath`、回调外部监听。
 
 ### CarPropertyManager 与服务的 wire 协议
@@ -155,8 +170,8 @@ macOS 注意：脚本用 BSD `stat -f %z` 取文件大小。
 ### 产物
 
 - 路径：`tools/android-car-boot/api/build/android.car.jar`
-- 大小：**12,341 字节**（jar 根仅 `classes.dex`；dex 037，16 个类）
-- sha256：`cb71ec777cba3566ba3127e3dcd8134bc3f4aad176cc9dcebb5bdeff6bf1d42b`（JDK 17 +
+- 大小：**19,859 字节**（jar 根仅 `classes.dex`；dex 54 个类）
+- sha256：`ba6408f5e669cf225e8e77a6bbedd23229c87d6791e02411127e236045356fe4`（JDK 17 +
   build-tools 34.0.0 下构建，与 Windows 产物相同，可用于设备侧比对；换工具链版本则可能不同）
 - 注入脚本（`avd/provision.py`）始终信任**本地实际文件**的 sha256，只在日志里把与基线指纹的差异
   作为提示打印，不会阻断构建或注入。
@@ -199,13 +214,14 @@ v202403121801）的 smali 中所有对 `android.car.*` 的方法/字段引用，
 
 ## 已知限制
 
-1. **真正实现的只有属性服务**：`CarPropertyManager`/`BootCarProtocol` 是完整实现（含 AOSP
+1. **真正完整的只有属性服务**：`CarPropertyManager`/`BootCarProtocol` 是完整实现（含 AOSP
    car-lib 的 `getIntArrayProperty`/`getByteArrayProperty`/`getFloatArrayProperty`/
    `getPropertyList(ArraySet)`/`isPropertyAvailable` 等超集方法）；`cabin`/`hvac`/`sensor`/
-   `audio`/`mcu_service`/`car_tbox_service`/`info` 的 `getCarManager` 反射构造的是**宿主 APK
-   自带的 AOSP 管理器类**，其属性读写会落到本 jar 的 `CarPropertyManager` + 服务端属性垫片，
-   因此能拿到虚拟值；但没有事件回调、无真实 MCU/ECU 语义。宿主 APK 未打包这些类（例如本项目
-   的 APP）时返回 `null`。没有异步/批量 API。
+   `audio`/`mcu_service`/`car_tbox_service`/`info` 的 `getCarManager` 反射构造到本 jar 的
+   精简管理器（`android.car.hardware.*` / `android.car.media.*`），属性读写落到本 jar 的
+   `CarPropertyManager` + 服务端属性垫片，因此能拿到虚拟值；精简管理器只实现已验证厂商用到的
+   子集，宿主 APK 若自带同名类则 dex 优先，两者都缺时返回 `null`。没有事件回调、无真实
+   MCU/ECU 语义，也没有异步/批量 API。
 2. **自定义 Binder 事务协议，仅适配本项目的虚拟 CarService**（`com.android.car` 假服务）。
    事务码从 `0x1000` 起，服务端把 `<0x1000` 的 AOSP ICar 小号事务码交给兼容垫片，系统车机应用
    按 AOSP 方式 bind 同一个 Binder 也不会收到畸形 reply；但本 jar 只覆盖 APP 使用面，不要与

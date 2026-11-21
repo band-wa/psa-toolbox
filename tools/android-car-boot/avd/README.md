@@ -31,8 +31,8 @@
 | platform-tools | `37.0.1` |
 | 加速 | AEHD `2.2.0`（`extras;google;Android_Emulator_Hypervisor_Driver`） |
 | JDK | `<jdk-17>`（`setup.ps1` 默认值，用 `-JavaHome` 覆盖；sdkmanager/avdmanager 需要） |
-| AVD 设备档 | `automotive_1024p_landscape`：1920×720、density 213、4G RAM、8G data、swiftshader、无音视频、无相机、键盘、无边框、4 核 |
-| bootclasspath jar | `tools/android-car-boot/api/build/android.car.jar` 12,341 B，sha256 `cb71ec77…6bf1d42b` |
+| AVD 设备档 | `automotive_1024p_landscape`：1920×720、density 213、4G RAM、8G data、auto、无音视频、无相机、键盘、无边框、4 核 |
+| bootclasspath jar | `tools/android-car-boot/api/build/android.car.jar` 19,859 B，sha256 `ba6408f5…04356fe4` |
 | 服务 APK | `tools/android-car-boot/service/build/outputs/apk/debug/service-debug.apk` 35,703 B，sha256 `aa17a87a…f47d8fdd` |
 | probe APK（可选，自备） | `verify/bootinject/out/probe-app.apk`，包 `com.bandwa.bootinject.probe`，logcat tag `CARPROBE`；不存在时跳过该项校验 |
 | APP APK（可选） | `app/build/outputs/apk/debug/app-debug.apk`，包 `com.bandwa.openadb`，需 `-PavdAbi` |
@@ -47,14 +47,14 @@
 | platform-tools | SDK 组件 `platform-tools` |
 | 加速 | 系统 Hypervisor.framework（HVF），无需安装；`emulator-check accel` 输出 `Hypervisor.Framework` |
 | JDK | JDK 17（`--java-home` 可覆盖；sdkmanager 需要） |
-| AVD 设备档 | `setup.sh` 直写 config.ini：1920×720、density 213、4G RAM、8G data、swiftshader_indirect、无音视频、无相机、键盘、无边框、4 核、横屏 |
-| bootclasspath jar | `tools/android-car-boot/api/build/android.car.jar` 12,341 B，sha256 `cb71ec77…6bf1d42b`（与 Windows 相同） |
+| AVD 设备档 | `setup.sh` 直写 config.ini：1920×720、density 213、4G RAM、8G data、auto、无音视频、无相机、键盘、无边框、4 核、横屏 |
+| bootclasspath jar | `tools/android-car-boot/api/build/android.car.jar` 19,859 B，sha256 `ba6408f5…04356fe4`（与 Windows 相同） |
 | 服务 APK | `tools/android-car-boot/service/build/outputs/apk/debug/service-debug.apk` 24,903 B，sha256 `30af2683…c29d45e` |
 | APP APK（可选） | `app/build/outputs/apk/debug/app-debug.apk` 14,586,486 B，sha256 `886819b7…ff745eb4`，包 `com.bandwa.openadb` 5.3.4 |
 | probe APK（可选，自备） | 同 Windows：`verify/bootinject/out/probe-app.apk`；不存在时跳过该项校验 |
 
-> jar 与设备 ABI 无关，macOS 用 JDK 17 + build-tools 34.0.0 构建时与 Windows 产物相同（12,341 B /
-> `cb71ec77…`）；服务 APK 因 Gradle/AGP 环境不同而大小/指纹不同。脚本始终信任本地实际 sha256，
+> jar 与设备 ABI 无关，macOS 用 JDK 17 + build-tools 34.0.0 构建时与 Windows 产物相同（19,859 B /
+> `ba6408f5…`）；服务 APK 因 Gradle/AGP 环境不同而大小/指纹不同。脚本始终信任本地实际 sha256，
 > 只在日志里提示与基线指纹不同，不阻断构建与注入。
 
 注入成功的判据（`provision.py --verify` 会全部检查）：
@@ -136,11 +136,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\s
 ### 4.2 启动 / 停止（run.ps1）
 
 ```powershell
-# 启动（默认 psa_api28 @ 5554，无窗口，writable-system，no-snapshot），等 boot 后自动 adb root
+# 启动（默认 psa_api28 @ 5554，窗口，writable-system，no-snapshot），等 boot 后自动 adb root
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\run.ps1
 
-# 换端口 / 显示窗口 / 允许快照 / 不带 writable-system
-powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\run.ps1 -Port 5556 -Window
+# 换端口 / 强制 GPU / 无窗口 / 允许快照 / 不带 writable-system
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\run.ps1 -Port 5556 -Gpu host
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\run.ps1 -NoWindow
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\run.ps1 -NoSnapshot $false
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\run.ps1 -WritableSystem $false
 
@@ -152,7 +153,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\android-car-boot\avd\r
 ```
 
 参数：`-AvdName`、`-Port`（偶数，5554–5584）、`-SdkRoot`、`-NoSnapshot`、
-`-WritableSystem`、`-Window`、`-Stop`、`-Restart`、`-Status`、`-DryRun`、`-TimeoutSec`（默认 300）。
+`-WritableSystem`、`-NoWindow`（默认有窗口，加它才是 headless）、`-Gpu`（默认 `auto`）、
+`-Stop`、`-Restart`、`-Status`、`-DryRun`、`-TimeoutSec`（默认 300）。
 
 说明：通过 WMI（`Win32_Process.Create`）启动，避免父 shell 退出时连带杀掉模拟器；
 日志在 `tools/android-car-boot/build/avd-logs/emulator-<port>.log`。
@@ -305,7 +307,7 @@ PowerShell 风格（`-AvdName`）两种拼写；布尔型参数还接受 `1/true
 | 脚本 | 选项 |
 | --- | --- |
 | `setup.sh` | `--avd-name`（默认 `psa_api28`）、`--sdk-root`、`--java-home`、`--force`、`--verify-only`、`--skip-sdk-install`、`--dry-run`、`-h` |
-| `run.sh` | `--avd-name`、`--port`（偶数 `5554`–`5584`，默认 `5554`）、`--sdk-root`、`--window`、`--no-snapshot`、`--writable-system`、`--timeout-sec`（300）、`--status`、`--stop`、`--restart`、`--dry-run`、`-h` |
+| `run.sh` | `--avd-name`、`--port`（偶数 `5554`–`5584`，默认 `5554`）、`--sdk-root`、`--window`（默认开启，`--window=0` 为 headless）、`--gpu`（默认 `auto`）、`--no-snapshot`、`--writable-system`、`--timeout-sec`（300）、`--status`、`--stop`、`--restart`、`--dry-run`、`-h` |
 | `snapshot.sh` | `--avd-name`、`--zip-path`、`--sdk-root`、`--no-stop`、`--keep-stage`、`--force`、`--dry-run`、`--timeout-sec`（120）、`--checksum-max-mb`（64）、`-h` |
 | `provision.py` | 互斥 `--verify` / `--rollback` / `--dry-run` / `--print-device-info`，另有 `--serial`、`--adb`、`--abi`、`--api-jar`、`--service-apk`、`--apk`、`--probe-apk`、`--probe-wait`、`--no-reboot`、`--timeout`（600）、`--force` |
 
@@ -321,12 +323,13 @@ PowerShell 风格（`-AvdName`）两种拼写；布尔型参数还接受 `1/true
 sdkmanager --install "platform-tools" "emulator" "build-tools;34.0.0" \
   "platforms;android-34" "system-images;android-28;default;arm64-v8a"
 
-# 1. 构建：api jar → 服务 APK →（可选）APP APK
+# 1. 构建：api jar → 蓝牙栈替身 jar → 服务 APK →（可选）APP APK
 bash tools/android-car-boot/api/build.sh
+bash tools/android-car-boot/bt-shim/build.sh
 bash ./gradlew :tools:android-car-boot:service:assembleDebug
 bash ./gradlew :app:assembleDebug -PavdAbi
 
-# 2. 创建（幂等）并启动 AVD：psa_api28 @ emulator-5554，headless/writable-system/no-snapshot
+# 2. 创建（幂等）并启动 AVD：psa_api28 @ emulator-5554，窗口（--window=0 为 headless）/writable-system/no-snapshot
 bash tools/android-car-boot/avd/setup.sh
 bash tools/android-car-boot/avd/run.sh                 # 冷启动后等 sys.boot_completed=1
 
@@ -340,6 +343,11 @@ bash tools/android-car-boot/avd/run.sh --status
 bash tools/android-car-boot/avd/run.sh --stop
 bash tools/android-car-boot/avd/snapshot.sh
 ```
+
+`run.sh` / `run.ps1` 在 AVD boot 完成后会自动 `adb root`、push/启动 `bt-shim`（注册模拟蓝牙栈
+`bluetooth_manager`，车机桌面 `com.android.launcher` 依赖它才不闪退），并把系统语言设为简体中文
+（`persist.sys.locale=zh-CN`，非 zh-CN 时重启 framework 使其生效；`bt-shim/build/bt-shim.jar` 未构建时
+只告警不阻断；`--dry-run` / `-DryRun` 会跳过这些步骤）。
 
 只读诊断与预览：`python3 tools/android-car-boot/avd/provision.py --print-device-info`、
 `setup.sh --verify-only`、`run.sh --dry-run`、`snapshot.sh --dry-run`、

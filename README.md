@@ -11,7 +11,7 @@
 ![Android](https://img.shields.io/badge/Android-9%2B-3DDC84?logo=android&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/Kotlin-1.9.25-7F52FF?logo=kotlin&logoColor=white)
 ![Compose](https://img.shields.io/badge/Jetpack%20Compose-2024.12.01-4285F4?logo=jetpackcompose&logoColor=white)
-![Version](https://img.shields.io/badge/version-5.3.3-blue)
+![Version](https://img.shields.io/badge/version-5.3.4-blue)
 ![License](https://img.shields.io/badge/License-GPLv3-blue)
 [![CI](https://github.com/band-wa/psa-toolbox/actions/workflows/ci.yml/badge.svg)](https://github.com/band-wa/psa-toolbox/actions/workflows/ci.yml)
 
@@ -161,6 +161,7 @@ cd psa-toolbox
 | `psa.infoBase` | `PSA_INFO_BASE` | 公告栏页面 |
 | `psa.umengKey` | `PSA_UMENG_KEY` | 友盟统计 AppKey |
 | `psa.shafaEndpoint` | `PSA_SHAFA_ENDPOINT` | 沙发管家下载地址接口 |
+| `psa.donationQr` | `PSA_DONATION_QR` | 关于页赞赏码图片（绝对路径或相对仓库根目录） |
 
 ```properties
 # local.properties
@@ -169,9 +170,12 @@ psa.otaBase=https://ota.example.com
 psa.infoBase=https://info.example.com
 psa.umengKey=<your-app-key>
 psa.shafaEndpoint=https://example.com/shafa/downloadurl
+psa.donationQr=/path/to/your/donation.png
 ```
 
 未配置时构建仍可成功：检查更新与下载入口提示「未配置…」并跳过，公告显示「暂无新公告」，沙发管家安装提示「未配置沙发管家下载地址」，友盟统计不初始化。
+
+赞赏码默认使用仓库内置图片（`app/src/donationQr/res/drawable/qr_code.webp`）；fork 后如需换成自己的赞赏码，把图片路径配置到 `psa.donationQr` / `PSA_DONATION_QR` 即可，构建时会作为 `qr_code` 资源打包（支持 png / webp / jpg）。
 
 ### 测试
 

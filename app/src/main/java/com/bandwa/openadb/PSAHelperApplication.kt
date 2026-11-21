@@ -1,6 +1,7 @@
 package com.bandwa.openadb
 
 import android.app.Application
+import com.bandwa.openadb.util.StorageOptimize
 import com.bandwa.openadb.util.Utils.PREFS_NAME
 import com.bandwa.openadb.util.apk.ApkDownloader
 import com.umeng.commonsdk.UMConfigure
@@ -16,6 +17,11 @@ class PSAHelperApplication : Application() {
 
         CoroutineScope(Dispatchers.IO).launch {
             ApkDownloader.cleanupDownloads(this@PSAHelperApplication)
+        }
+
+        // 日志服务会重建日志目录，需在每次启动时重新占位阻断
+        if (StorageOptimize.isEnabled(this)) {
+            StorageOptimize.apply(true)
         }
 
         val sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)

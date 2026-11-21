@@ -61,7 +61,7 @@ fun AboutSettingsScreen(
             .padding(top = 40.dp, bottom = 20.dp)
             .verticalScroll(scrollState)
     ) {
-        SelectionText(text = "支持开发组")
+        SelectionText(text = "支持开发")
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -71,6 +71,16 @@ fun AboutSettingsScreen(
             Image(
                 painter = painterResource(id = R.drawable.qr_code),
                 contentDescription = "赞赏二维码",
+                modifier = Modifier
+                    .size(200.dp)
+                    .clip(RoundedCornerShape(6.dp))
+            )
+
+            Spacer(modifier = Modifier.width(32.dp))
+
+            Image(
+                painter = painterResource(id = R.drawable.repo_qr),
+                contentDescription = "开源仓库二维码",
                 modifier = Modifier
                     .size(200.dp)
                     .clip(RoundedCornerShape(6.dp))
@@ -122,7 +132,7 @@ fun AboutSettingsScreen(
 
         Text(
             modifier = Modifier.padding(top = 15.dp),
-            text = "${uiState.appVersionName} | © 2025 bandwa, YC-Tan, ningning21 and fingdo 版权所有\n" +
+            text = "${uiState.appVersionName} | © 2026 bandwa, YC-Tan, ningning21 and fingdo 版权所有 | 遵循 GPL-3.0 协议开源\n" +
                    "特别感谢: 逐梦汴梁城 (甲壳虫等详细教程), 卓群 (无偿提供云盘), 戏子 (tasker方控), 国新 (拨号调试) 和所有间接参与或测试反馈的车友",
             style = AppTheme.typography.titleLarge,
             color = AppTheme.colors.textColorSecondary

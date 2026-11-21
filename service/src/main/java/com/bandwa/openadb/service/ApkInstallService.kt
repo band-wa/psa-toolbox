@@ -8,11 +8,23 @@ import android.os.IBinder
 import android.util.Log
 import com.bandwa.openadb.util.Utils
 import com.bandwa.openadb.service.install.ApkInstaller
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileInputStream
+import java.util.concurrent.Executors
 
 /** PackageInstaller 安装执行器；结果通过调用方指定的广播 action 回传。 */
 class ApkInstallService : Service() {
+    // 安装流程会复用 workspace，单线程串行；写安装会话阻塞 binder，不能放主线程
+    private val installDispatcher = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "apk-install")
+    }.asCoroutineDispatcher()
+    private val serviceScope = CoroutineScope(SupervisorJob() + installDispatcher)
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val apkPath = intent?.getStringExtra(ApkInstaller.EXTRA_APK_PATH)
         if (apkPath == null) {
@@ -23,7 +35,15 @@ class ApkInstallService : Service() {
         val resultAction = intent.getStringExtra(ApkInstaller.EXTRA_RESULT_ACTION)
             ?: Utils.ACTION_INSTALL_COMMIT
         val requestCode = intent.getIntExtra(ApkInstaller.EXTRA_REQUEST_CODE, DEFAULT_REQUEST_CODE)
-        installApp(apkPath, packageName, resultAction, requestCode, startId)
+        serviceScope.launch {
+            try {
+                installApp(apkPath, packageName, resultAction, requestCode, startId)
+            } catch (e: Exception) {
+                Log.e(TAG, "installApp crashed", e)
+                notifyFailure(resultAction, "安装异常: ${e.message}")
+                stopSelf(startId)
+            }
+        }
         return START_NOT_STICKY
     }
 
@@ -148,6 +168,12 @@ class ApkInstallService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onDestroy() {
+        serviceScope.cancel()
+        installDispatcher.close()
+        super.onDestroy()
+    }
 
     private companion object {
         const val TAG = "ApkInstallService"

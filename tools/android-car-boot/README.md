@@ -24,6 +24,7 @@ system 覆盖层，不动 SDK 共享镜像，可随时回滚或重建。
 ```
 tools/android-car-boot/
 ├── api/          # bootclasspath 客户端（android.car.* 标准 dex）构建：bash api/build.sh
+├── bt-shim/      # 模拟蓝牙栈替身（注册 bluetooth_manager，车机桌面依赖）：bash bt-shim/build.sh
 ├── protocol/     # 客户端/服务端共用的 boot 协议（BootCarProtocol）
 ├── service/      # com.android.car 服务端（独立 Gradle 模块 :tools:android-car-boot:service）
 ├── avd/          # 官方 AVD 底座：setup / run / provision / snapshot + README（.ps1 为 Windows，.sh 为 macOS）
@@ -52,7 +53,8 @@ tools/android-car-boot/
 Windows（Git Bash）：
 
 ```powershell
-bash tools/android-car-boot/api/build.sh                                # android.car jar（javac + d8 + jar）
+bash tools/android-car-boot/api/build.sh                                # bootclasspath 补丁 jar（javac + d8 + jar）
+bash tools/android-car-boot/bt-shim/build.sh                            # 蓝牙栈替身 jar（车机桌面需要）
 .\gradlew.bat :tools:android-car-boot:service:assembleDebug --offline    # com.android.car 服务 APK
 .\gradlew.bat :app:assembleDebug -PavdAbi --offline                     # 工具箱 APP（-PavdAbi 额外打包 x86_64 native 库）
 ```
@@ -61,6 +63,7 @@ macOS（Apple Silicon）：
 
 ```bash
 bash tools/android-car-boot/api/build.sh                                 # 跨平台：POSIX d8/dexdump + BSD stat
+bash tools/android-car-boot/bt-shim/build.sh
 bash ./gradlew :tools:android-car-boot:service:assembleDebug            # 服务 APK
 bash ./gradlew :app:assembleDebug -PavdAbi                              # APP（可选，用于 CarGateway 校验）
 ```
@@ -68,14 +71,14 @@ bash ./gradlew :app:assembleDebug -PavdAbi                              # APP（
 macOS 注意：`gradlew` 与各 `*.sh` 已提交可执行位（100755），`./gradlew`、`./tools/android-car-boot/avd/setup.sh`
 可直接运行；Windows 检出若丢了权限位，用 `bash ./gradlew` / `bash ...setup.sh` 亦可。
 
-产物：`api/build/android.car.jar`、`service/build/outputs/apk/debug/service-debug.apk`、
-`app/build/outputs/apk/debug/app-debug.apk`；三者分别对应注入用的 bootclasspath jar、
-系统 CarService 与待测 APP。
+产物：`api/build/android.car.jar`、`bt-shim/build/bt-shim.jar`、
+`service/build/outputs/apk/debug/service-debug.apk`、`app/build/outputs/apk/debug/app-debug.apk`；
+分别对应注入用的 bootclasspath jar、模拟蓝牙栈替身（run 脚本在 boot 后自动注册）、系统 CarService 与待测 APP。
 
 ## 快速开始（官方 AVD）
 
 ```powershell
-# 创建（幂等，可跳过）并启动 AVD：psa_api28 @ 5554，无窗口、writable-system、no-snapshot
+# 创建（幂等，可跳过）并启动 AVD：psa_api28 @ 5554，窗口（-NoWindow 为 headless）、writable-system、no-snapshot
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/android-car-boot/avd/setup.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/android-car-boot/avd/run.ps1
 
@@ -117,12 +120,13 @@ sdkmanager --install "platform-tools" "emulator" "build-tools;34.0.0" \
 在仓库根目录执行（脚本用 `bash` 调用，不依赖 git 里的可执行位）：
 
 ```bash
-# 1. 构建三个产物（第 3 条可选，仅用于 APP CarGateway 校验）
+# 1. 构建产物（APP APK 可选，仅用于 APP CarGateway 校验）
 bash tools/android-car-boot/api/build.sh
+bash tools/android-car-boot/bt-shim/build.sh
 bash ./gradlew :tools:android-car-boot:service:assembleDebug
 bash ./gradlew :app:assembleDebug -PavdAbi
 
-# 2. 创建（幂等）并启动 AVD：psa_api28 @ emulator-5554，headless、writable-system、no-snapshot
+# 2. 创建（幂等）并启动 AVD：psa_api28 @ emulator-5554，窗口（--window=0 为 headless）、writable-system、no-snapshot
 bash tools/android-car-boot/avd/setup.sh
 bash tools/android-car-boot/avd/run.sh
 

@@ -9,7 +9,7 @@ data class ExpertModeUIState(
 
     val isAppAutoGrant: Boolean = true,
 
-    val isMtkLogEnabled: Boolean = false,
+    val isStorageOptimized: Boolean = true,
 
     val shouldRunUserSh: Boolean = false,
 

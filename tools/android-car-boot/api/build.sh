@@ -103,7 +103,7 @@ echo "== 清理 $BUILD_DIR"
 rm -rf "$BUILD_DIR"
 mkdir -p "$CLASSES_DIR" "$DEX_DIR" "$JAR_ROOT"
 
-# ---- 1. javac：编译 6 个 android.car 类 + boot 协议类 ----
+# ---- 1. javac：编译 android.car 类 + boot 协议类 ----
 # bash 3.2 兼容：用 while read 填充数组，不依赖 mapfile。
 SOURCES=()
 while IFS= read -r f; do

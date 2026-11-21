@@ -48,7 +48,7 @@ fun ExpertModeRoute(
         onListModChange = viewModel::setListMod,
         onCompatModeChange = viewModel::setCompatMode,
         onAppAutoGrantChange = viewModel::setAppAutoGrant,
-        onMtkLogChange = viewModel::setMtkLogEnabled,
+        onStorageOptimizeChange = viewModel::setStorageOptimized,
         onRunUserShChange = viewModel::setShouldRunUserSh,
         onRequestScriptQrCode = viewModel::requestScriptQrCode,
         onViewRunningServices = viewModel::viewRunningServices,
@@ -61,7 +61,7 @@ fun ExpertModeScreen(
     onListModChange: (Boolean) -> Unit,
     onCompatModeChange: (Boolean) -> Unit,
     onAppAutoGrantChange: (Boolean) -> Unit,
-    onMtkLogChange: (Boolean) -> Unit,
+    onStorageOptimizeChange: (Boolean) -> Unit,
     onRunUserShChange: (Boolean) -> Unit,
     onRequestScriptQrCode: () -> Unit,
     onViewRunningServices: () -> Unit,
@@ -151,12 +151,12 @@ fun ExpertModeScreen(
 
         SelectionText(
             modifier = Modifier.padding(top = 32.dp),
-            text = "系统调试日志"
+            text = "存储空间优化"
         )
         SwitchGroup(
-            check = uiState.isMtkLogEnabled,
-            title = "关闭后可节省约1G存储空间",
-            onCheckedChange = onMtkLogChange
+            check = uiState.isStorageOptimized,
+            title = "打开后减少日志文件占用空间",
+            onCheckedChange = onStorageOptimizeChange
         )
 
         SelectionText(
@@ -233,7 +233,7 @@ fun ExpertModeScreenPreview() {
             onListModChange = {},
             onCompatModeChange = {},
             onAppAutoGrantChange = {},
-            onMtkLogChange = {},
+            onStorageOptimizeChange = {},
             onRunUserShChange = {},
             onRequestScriptQrCode = {},
             onViewRunningServices = {},

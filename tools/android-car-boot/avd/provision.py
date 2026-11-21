@@ -109,7 +109,7 @@ ZYGOTE_RC = "/init.zygote64_32.rc"
 ENVIRON_RC = "/init.environ.rc"
 
 # 基线指纹（干净 AVD 上标定；校验始终以本地文件为准）
-REF_JAR = ("cb71ec777cba3566ba3127e3dcd8134bc3f4aad176cc9dcebb5bdeff6bf1d42b", 12341)
+REF_JAR = ("ba6408f5e669cf225e8e77a6bbedd23229c87d6791e02411127e236045356fe4", 19859)
 REF_SERVICE_APK = ("aa17a87a6cb5e388bb3bb7c82de344d1e46762880389f908e0bffae8f47d8fdd", 35703)
 # jar 与两个 rc 与 ABI 无关：x86_64 与 arm64 API28 镜像一致。
 REF_STOCK_JAR = ("1c16f5976318fadcf7add92c518a93896f99e2a78f742b7347d8539103264882", 183)
@@ -410,9 +410,12 @@ def check_local_artifacts(ctx: Context, args: argparse.Namespace) -> None:
     log(f"api jar   : {ctx.jar}  {ctx.jar.stat().st_size} B  sha256={ctx.jar_sha}")
     log(f"服务 APK  : {ctx.service}  {ctx.service.stat().st_size} B  sha256={ctx.service_sha}")
     if (ctx.jar_sha, ctx.jar.stat().st_size) != REF_JAR:
-        log(f"提示：jar 与实测指纹不同（实测 {REF_JAR[1]} B / {REF_JAR[0][:12]}…），继续以当前文件为准")
+        log(f"提示：jar 与基线指纹不同（基线 {REF_JAR[1]} B / {REF_JAR[0][:12]}…，"
+            f"实测 {ctx.jar.stat().st_size} B / {ctx.jar_sha[:12]}…），继续以当前文件为准")
     if (ctx.service_sha, ctx.service.stat().st_size) != REF_SERVICE_APK:
-        log(f"提示：服务 APK 与实测指纹不同（实测 {REF_SERVICE_APK[1]} B），继续以当前文件为准")
+        log(f"提示：服务 APK 与基线指纹不同（基线 {REF_SERVICE_APK[1]} B / "
+            f"{REF_SERVICE_APK[0][:12]}…，实测 {ctx.service.stat().st_size} B / "
+            f"{ctx.service_sha[:12]}…），继续以当前文件为准")
 
     app = args.apk
     if app:
