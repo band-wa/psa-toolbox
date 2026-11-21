@@ -45,7 +45,7 @@ android {
         minSdk = 24
         targetSdk = 25
         versionCode = 10
-        versionName = "5.3.3"
+        versionName = "5.3.4"
         ndk {
             // x86_64 仅用于 Google 官方模拟器（android-car-boot AVD）联调：
             // 构建时加 -PavdAbi 才打包 x86_64，正式包保持 arm64-v8a
