@@ -1,12 +1,8 @@
 package com.bandwa.openadb.presentation.main.system
 
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.net.ConnectivityManager
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -24,6 +20,7 @@ import com.bandwa.openadb.util.ShellUtils
 import com.bandwa.openadb.util.Utils
 import com.bandwa.openadb.util.Utils.HVAC_HOOK_KEY
 import com.bandwa.openadb.util.VersionUtils.isRemoteVersionDiff
+import com.bandwa.openadb.util.WifiStateMonitor
 import com.bandwa.openadb.service.install.ApkInstaller
 import com.bandwa.openadb.service.install.RemoteApkSpec
 import com.bandwa.openadb.util.apk.RemoteHttp
@@ -46,10 +43,7 @@ class SystemSettingsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(SystemSettingsUIState())
     val uiState = _uiState.asStateFlow()
 
-    private lateinit var wifiStateReceiver: BroadcastReceiver
-
     init {
-        monitorWifiState()
         val adbEnable = ADBControl.isAdbWirelessEnabled()
         val isProxyAirConditionChecked = sharedPreferences.getBoolean(HVAC_HOOK_KEY, false)
         val isFullscreenGestureChecked = sharedPreferences.getBoolean(GestureBarController.PREF_ENABLED, false)
@@ -61,35 +55,27 @@ class SystemSettingsViewModel @Inject constructor(
         )
         fetchWebContent()
         getFotaEnable()
-    }
 
-    private fun monitorWifiState() = viewModelScope.launch {
-        wifiStateReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                if (intent?.action == ConnectivityManager.CONNECTIVITY_ACTION) {
-                    if (context?.let { isConnectedToWifi(it) } == true) {
-                        val adbEnable = ADBControl.isAdbWirelessEnabled()
-                        _uiState.update {
-                            it.copy(
-                                isAdbSwitchChecked = adbEnable,
-                                isAdbEnable = adbEnable,
-                            )
-                        }
-                    } else {
-                        _uiState.update {
-                            it.copy(
-                                isAdbSwitchChecked = false,
-                                isAdbEnable = false,
-                            )
-                        }
+        viewModelScope.launch {
+            WifiStateMonitor.isWifiConnected.collect { connected ->
+                if (connected) {
+                    val adbEnable = ADBControl.isAdbWirelessEnabled()
+                    _uiState.update {
+                        it.copy(
+                            isAdbSwitchChecked = adbEnable,
+                            isAdbEnable = adbEnable,
+                        )
+                    }
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            isAdbSwitchChecked = false,
+                            isAdbEnable = false,
+                        )
                     }
                 }
             }
         }
-        context.registerReceiver(
-            wifiStateReceiver,
-            IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
-        )
     }
 
     private fun fetchWebContent() {
@@ -268,9 +254,5 @@ class SystemSettingsViewModel @Inject constructor(
             Toast.makeText(context, "全面屏手势已关闭", Toast.LENGTH_SHORT).show()
         }
         _uiState.update { it.copy(isFullscreenGestureChecked = checked) }
-    }
-
-    override fun onCleared() {
-        context.unregisterReceiver(wifiStateReceiver)
     }
 }

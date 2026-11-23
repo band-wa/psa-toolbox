@@ -60,6 +60,7 @@ import com.bandwa.hook.Hook
 import com.bandwa.openadb.util.ShellUtils
 import com.bandwa.openadb.util.Utils
 import com.bandwa.openadb.util.Utils.PREFS_NAME
+import com.bandwa.openadb.util.WifiStateMonitor
 import com.bandwa.openadb.service.ServiceLauncher.showQRCode
 import com.bandwa.openadb.service.install.ApkInstaller
 import com.bandwa.openadb.util.apktools.ApkInspector
@@ -148,6 +149,14 @@ fun LauncherSettingsDialog(
                 }
                 deployProgress = 1.0f
                 deploymentStatus = "success"
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        WifiStateMonitor.isWifiConnected.collect { connected ->
+            if (!connected) {
+                picQrCodeBitmap = null
             }
         }
     }

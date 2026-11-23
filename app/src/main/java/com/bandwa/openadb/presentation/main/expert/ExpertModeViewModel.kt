@@ -3,17 +3,20 @@ package com.bandwa.openadb.presentation.main.expert
 import android.content.Context
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.bandwa.openadb.util.OpenSysSetting.openRunningServices
 import com.bandwa.openadb.util.StorageOptimize
 import com.bandwa.openadb.util.Utils.APP_AUTO_GRANT_KEY
 import com.bandwa.openadb.util.Utils.COMPAT_MODE_KEY
 import com.bandwa.openadb.util.Utils.PREFS_NAME
+import com.bandwa.openadb.util.WifiStateMonitor
 import com.bandwa.openadb.service.ServiceLauncher.showQRCode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -29,6 +32,14 @@ class ExpertModeViewModel @Inject constructor(
 
     init {
         restoreSettings()
+
+        viewModelScope.launch {
+            WifiStateMonitor.isWifiConnected.collect { connected ->
+                if (!connected) {
+                    _uiState.update { it.copy(scriptQrCodeBitmap = null) }
+                }
+            }
+        }
     }
 
     private fun restoreSettings() {

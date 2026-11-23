@@ -12,6 +12,7 @@ import androidx.lifecycle.viewModelScope
 import com.bandwa.openadb.util.AvatarMod
 import com.bandwa.openadb.service.InstallShafa.installSFGJ
 import com.bandwa.openadb.util.Utils
+import com.bandwa.openadb.util.WifiStateMonitor
 import com.bandwa.openadb.service.ServiceLauncher.showQRCode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -100,6 +101,16 @@ class PersonSettingsViewModel @Inject constructor(
             Utils.installEvents.collect { event ->
                 if (event == Utils.ACTION_APK_INSTALL_STARTED) {
                     startRemoteInstall()
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            WifiStateMonitor.isWifiConnected.collect { connected ->
+                if (!connected) {
+                    _uiState.update {
+                        it.copy(welcomeQrCodeBitmap = null, apkQrCodeBitmap = null)
+                    }
                 }
             }
         }

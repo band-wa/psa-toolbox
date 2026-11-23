@@ -3,6 +3,7 @@ package com.bandwa.openadb
 import android.app.Application
 import com.bandwa.openadb.util.StorageOptimize
 import com.bandwa.openadb.util.Utils.PREFS_NAME
+import com.bandwa.openadb.util.WifiStateMonitor
 import com.bandwa.openadb.util.apk.ApkDownloader
 import com.umeng.commonsdk.UMConfigure
 import dagger.hilt.android.HiltAndroidApp
@@ -14,6 +15,8 @@ import kotlinx.coroutines.launch
 class PSAHelperApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+
+        WifiStateMonitor.start(this)
 
         CoroutineScope(Dispatchers.IO).launch {
             ApkDownloader.cleanupDownloads(this@PSAHelperApplication)
