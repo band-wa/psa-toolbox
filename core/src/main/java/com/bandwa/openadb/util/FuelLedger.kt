@@ -126,6 +126,15 @@ object FuelLedger {
         return result
     }
 
+    /** 本次加油升数估算：油量百分比变化 × 油箱容量。返回 null 表示数据不足以估算。 */
+    fun refueledLiters(entry: Entry, tankLiters: Int): Float? {
+        if (entry.manual || tankLiters <= 0) return null
+        if (entry.percentBefore !in 0..100 || entry.percentAfter !in 0..100) return null
+        val delta = entry.percentAfter - entry.percentBefore
+        if (delta <= 0) return null
+        return tankLiters * delta / 100f
+    }
+
     @Synchronized
     fun readAll(context: Context): List<Entry> {
         val f = file(context)

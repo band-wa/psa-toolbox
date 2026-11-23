@@ -186,6 +186,7 @@ fun FuelLedgerScreen(
                 }
                 FuelEntryRow(
                     entry = entry,
+                    tankLiters = uiState.tankLiters,
                     date = dateFormat.format(Date(entry.timestamp)),
                     segment = uiState.segments[entry.id],
                     onClick = { editingEntry = entry },
@@ -326,6 +327,7 @@ private fun FuelAmountDialog(
 @Composable
 private fun FuelEntryRow(
     entry: FuelLedger.Entry,
+    tankLiters: Int,
     date: String,
     segment: FuelLedger.Segment?,
     onClick: () -> Unit,
@@ -366,12 +368,16 @@ private fun FuelEntryRow(
         }
 
         Column(horizontalAlignment = Alignment.End) {
+            val percentText = when {
+                entry.manual -> "手动补录"
+                entry.skipped -> "已跳过 · ${entry.percentBefore}% → ${entry.percentAfter}%"
+                else -> "油量 ${entry.percentBefore}% → ${entry.percentAfter}%"
+            }
+            val liters = FuelLedger.refueledLiters(entry, tankLiters)
             Text(
-                text = when {
-                    entry.manual -> "手动补录"
-                    entry.skipped -> "已跳过 · ${entry.percentBefore}% → ${entry.percentAfter}%"
-                    else -> "油量 ${entry.percentBefore}% → ${entry.percentAfter}%"
-                },
+                text = liters?.let {
+                    String.format(Locale.getDefault(), "%s（约 %.1f L）", percentText, it)
+                } ?: percentText,
                 style = AppTheme.typography.titleLarge,
                 color = AppTheme.colors.textColorSecondary
             )
