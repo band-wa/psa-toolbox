@@ -50,7 +50,7 @@
 | AVD 设备档 | `setup.sh` 直写 config.ini：1920×720、density 213、4G RAM、8G data、auto、无音视频、无相机、键盘、无边框、4 核、横屏 |
 | bootclasspath jar | `tools/android-car-boot/api/build/android.car.jar` 19,859 B，sha256 `ba6408f5…04356fe4`（与 Windows 相同） |
 | 服务 APK | `tools/android-car-boot/service/build/outputs/apk/debug/service-debug.apk` 24,903 B，sha256 `30af2683…c29d45e` |
-| APP APK（可选） | `app/build/outputs/apk/debug/app-debug.apk` 14,586,486 B，sha256 `886819b7…ff745eb4`，包 `com.bandwa.openadb` 5.3.4 |
+| APP APK（可选） | `app/build/outputs/apk/debug/app-debug.apk` 14,480,907 B，sha256 `9c6e1ee0…4843a438`，包 `com.bandwa.openadb` 5.3.5 |
 | probe APK（可选，自备） | 同 Windows：`verify/bootinject/out/probe-app.apk`；不存在时跳过该项校验 |
 
 > jar 与设备 ABI 无关，macOS 用 JDK 17 + build-tools 34.0.0 构建时与 Windows 产物相同（19,859 B /

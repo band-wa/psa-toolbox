@@ -11,7 +11,7 @@
 ![Android](https://img.shields.io/badge/Android-9%2B-3DDC84?logo=android&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/Kotlin-1.9.25-7F52FF?logo=kotlin&logoColor=white)
 ![Compose](https://img.shields.io/badge/Jetpack%20Compose-2024.12.01-4285F4?logo=jetpackcompose&logoColor=white)
-![Version](https://img.shields.io/badge/version-5.3.4-blue)
+![Version](https://img.shields.io/badge/version-5.3.5-blue)
 ![License](https://img.shields.io/badge/License-GPLv3-blue)
 [![CI](https://github.com/band-wa/psa-toolbox/actions/workflows/ci.yml/badge.svg)](https://github.com/band-wa/psa-toolbox/actions/workflows/ci.yml)
 
