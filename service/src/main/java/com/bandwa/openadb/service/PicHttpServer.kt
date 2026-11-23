@@ -13,27 +13,20 @@ import java.net.ServerSocket
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
-/** 局域网扫码上传服务；接口无鉴权，仅短时开启并在空闲后自动关闭。 */
+/** 局域网扫码上传服务；接口无鉴权，请勿暴露到不可信网络。 */
 @RequiresApi(Build.VERSION_CODES.O)
 class PicHttpServer(
     host: String,
     port: Int,
     private val context: Context,
-    private val onRequestStart: () -> Unit = {},
-    private val onRequestFinished: () -> Unit = {},
 ) : NanoHTTPD(host, port) {
     override fun serve(session: IHTTPSession): Response {
-        onRequestStart()
-        return try {
-            when (val uri = session.uri) {
-                "/upload-audio" -> handleAudioUpload(session)
-                "/upload-script" -> handleScriptUpload(session)
-                "/upload-apk" -> handleApkUpload(session)
-                "/css/style.css" -> serveCSS()
-                else -> handleImageUpload(session)
-            }
-        } finally {
-            onRequestFinished()
+        return when (val uri = session.uri) {
+            "/upload-audio" -> handleAudioUpload(session)
+            "/upload-script" -> handleScriptUpload(session)
+            "/upload-apk" -> handleApkUpload(session)
+            "/css/style.css" -> serveCSS()
+            else -> handleImageUpload(session)
         }
     }
 

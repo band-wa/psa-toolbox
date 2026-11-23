@@ -102,7 +102,7 @@ psa-toolbox/
 - **HookBridgeService**：导出给被注入宿主绑定的 AIDL 服务，维护 hook 回调与版本上报，并守护主服务。
 - **ApkInstallService**：基于 `PackageInstaller` 的静默安装执行器（统一由 `ApkInstaller` 发起与等待结果）。
 - **CarGateway**：全进程唯一 `android.car` 连接，3 秒看门狗重连并在重连后重放属性订阅。
-- **PicHttpServerHost**：局域网扫码上传（壁纸 / 音频 / 开机脚本 / APK），单例复用、5 分钟空闲自动关闭。
+- **PicHttpServerHost**：局域网扫码上传（壁纸 / 音频 / 开机脚本 / APK），单例复用、随进程常驻。
 
 ## 核心机制：DEX 热补丁
 
