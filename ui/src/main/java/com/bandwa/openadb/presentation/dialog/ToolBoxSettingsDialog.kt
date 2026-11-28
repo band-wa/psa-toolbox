@@ -110,85 +110,90 @@ fun ToolBoxSettingsDialog(
                                     .fillMaxWidth()
                                     .verticalScroll(scrollState)
                             ) {
-                                SelectionText(
-                                    modifier = Modifier.padding(top = 16.dp),
-                                    text = "工具箱背景设置"
-                                )
-                                var expandedBg by remember { mutableStateOf(false) }
-                                Box {
-                                    TextButton(text = themeManager.backgroundType.displayName) {
-                                        expandedBg = !expandedBg
-                                    }
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 16.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(24.dp)
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        SelectionText(text = "工具箱背景设置")
+                                        var expandedBg by remember { mutableStateOf(false) }
+                                        Box {
+                                            TextButton(text = themeManager.backgroundType.displayName) {
+                                                expandedBg = !expandedBg
+                                            }
 
-                                    LiquidDropdownMenu(
-                                        expanded = expandedBg,
-                                        onDismissRequest = { expandedBg = false }
-                                    ) {
-                                        AppBackground.entries.forEach { bg ->
-                                            LiquidDropdownMenuItem(
-                                                text = bg.displayName,
-                                                selected = bg == themeManager.backgroundType,
-                                                onClick = {
-                                                    themeManager.updateBackground(bg)
-                                                    Toast.makeText(context, "背景已切换为: ${bg.displayName}", Toast.LENGTH_SHORT).show()
-                                                    expandedBg = false
+                                            LiquidDropdownMenu(
+                                                expanded = expandedBg,
+                                                onDismissRequest = { expandedBg = false }
+                                            ) {
+                                                AppBackground.entries.forEach { bg ->
+                                                    LiquidDropdownMenuItem(
+                                                        text = bg.displayName,
+                                                        selected = bg == themeManager.backgroundType,
+                                                        onClick = {
+                                                            themeManager.updateBackground(bg)
+                                                            Toast.makeText(context, "背景已切换为: ${bg.displayName}", Toast.LENGTH_SHORT).show()
+                                                            expandedBg = false
+                                                        }
+                                                    )
                                                 }
-                                            )
+                                            }
                                         }
                                     }
-                                }
 
-                                SelectionText(
-                                    modifier = Modifier.padding(top = 32.dp),
-                                    text = "工具箱主题模式"
-                                )
-                                var expandedThemeMode by remember { mutableStateOf(false) }
-                                Box {
-                                    TextButton(text = themeManager.themeMode.displayName) {
-                                        expandedThemeMode = !expandedThemeMode
-                                    }
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        SelectionText(text = "工具箱主题模式")
+                                        var expandedThemeMode by remember { mutableStateOf(false) }
+                                        Box {
+                                            TextButton(text = themeManager.themeMode.displayName) {
+                                                expandedThemeMode = !expandedThemeMode
+                                            }
 
-                                    LiquidDropdownMenu(
-                                        expanded = expandedThemeMode,
-                                        onDismissRequest = { expandedThemeMode = false }
-                                    ) {
-                                        ThemeMode.entries.forEach { mode ->
-                                            LiquidDropdownMenuItem(
-                                                text = mode.displayName,
-                                                selected = mode == themeManager.themeMode,
-                                                onClick = {
-                                                    themeManager.updateThemeMode(mode)
-                                                    Toast.makeText(context, "主题模式已修改为: ${mode.displayName}", Toast.LENGTH_SHORT).show()
-                                                    expandedThemeMode = false
+                                            LiquidDropdownMenu(
+                                                expanded = expandedThemeMode,
+                                                onDismissRequest = { expandedThemeMode = false }
+                                            ) {
+                                                ThemeMode.entries.forEach { mode ->
+                                                    LiquidDropdownMenuItem(
+                                                        text = mode.displayName,
+                                                        selected = mode == themeManager.themeMode,
+                                                        onClick = {
+                                                            themeManager.updateThemeMode(mode)
+                                                            Toast.makeText(context, "主题模式已修改为: ${mode.displayName}", Toast.LENGTH_SHORT).show()
+                                                            expandedThemeMode = false
+                                                        }
+                                                    )
                                                 }
-                                            )
+                                            }
                                         }
                                     }
-                                }
 
-                                SelectionText(
-                                    modifier = Modifier.padding(top = 32.dp),
-                                    text = "工具箱字体大小"
-                                )
-                                var expandedFontSize by remember { mutableStateOf(false) }
-                                Box {
-                                    TextButton(text = themeManager.fontSizeLevel.displayName) {
-                                        expandedFontSize = !expandedFontSize
-                                    }
-                                    LiquidDropdownMenu(
-                                        expanded = expandedFontSize,
-                                        onDismissRequest = { expandedFontSize = false }
-                                    ) {
-                                        FontSizeLevel.entries.forEach { level ->
-                                            LiquidDropdownMenuItem(
-                                                text = level.displayName,
-                                                selected = level == themeManager.fontSizeLevel,
-                                                onClick = {
-                                                    themeManager.updateFontSizeLevel(level)
-                                                    Toast.makeText(context, "字体大小已修改为: ${level.displayName}", Toast.LENGTH_SHORT).show()
-                                                    expandedFontSize = false
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        SelectionText(text = "工具箱字体大小")
+                                        var expandedFontSize by remember { mutableStateOf(false) }
+                                        Box {
+                                            TextButton(text = themeManager.fontSizeLevel.displayName) {
+                                                expandedFontSize = !expandedFontSize
+                                            }
+
+                                            LiquidDropdownMenu(
+                                                expanded = expandedFontSize,
+                                                onDismissRequest = { expandedFontSize = false }
+                                            ) {
+                                                FontSizeLevel.entries.forEach { level ->
+                                                    LiquidDropdownMenuItem(
+                                                        text = level.displayName,
+                                                        selected = level == themeManager.fontSizeLevel,
+                                                        onClick = {
+                                                            themeManager.updateFontSizeLevel(level)
+                                                            Toast.makeText(context, "字体大小已修改为: ${level.displayName}", Toast.LENGTH_SHORT).show()
+                                                            expandedFontSize = false
+                                                        }
+                                                    )
                                                 }
-                                            )
+                                            }
                                         }
                                     }
                                 }
