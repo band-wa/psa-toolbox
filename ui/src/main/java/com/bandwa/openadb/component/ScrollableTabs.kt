@@ -25,7 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -73,6 +72,13 @@ fun TabItemView(tab: TabItem, isSelected: Boolean, onClick: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     val alpha by animateFloatAsState(targetValue = if (isSelected) 1f else 0.65f, label = "alpha")
     val isLight = AppTheme.colors.textColorPrimary == Color(0xFF18191A)
+    // 图标与文字不重叠，把动画 alpha 乘进各自颜色等价于整组 alpha 层，可省掉每帧 saveLayer
+    val iconColor = if (isSelected) {
+        if (isLight) AppTheme.colors.colorBrand else Color.White
+    } else AppTheme.colors.iconColorPrimary
+    val textColor = if (isSelected) {
+        if (isLight) AppTheme.colors.colorBrand else Color.White
+    } else AppTheme.colors.textColorPrimary
 
     Box(
         modifier = Modifier
@@ -120,24 +126,19 @@ fun TabItemView(tab: TabItem, isSelected: Boolean, onClick: () -> Unit) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = 20.dp)
-                .alpha(alpha),
+                .padding(start = 20.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 modifier = Modifier.size(30.dp),
                 painter = painterResource(id = tab.icon),
                 contentDescription = "Tab ${tab.title} icon",
-                tint = if (isSelected) {
-                    if (isLight) AppTheme.colors.colorBrand else Color.White
-                } else AppTheme.colors.iconColorPrimary
+                tint = iconColor.copy(alpha = iconColor.alpha * alpha)
             )
             Text(
                 modifier = Modifier.padding(start = 14.dp),
                 text = tab.title,
-                color = if (isSelected) {
-                    if (isLight) AppTheme.colors.colorBrand else Color.White
-                } else AppTheme.colors.textColorPrimary,
+                color = textColor.copy(alpha = textColor.alpha * alpha),
                 style = AppTheme.typography.titleMedium
             )
         }

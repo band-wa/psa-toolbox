@@ -61,7 +61,8 @@ fun SquareSwitch(
         modifier = Modifier
             .width(trackWidth)
             .height(trackHeight)
-            .alpha(if (isEnable) 1f else 0.4f)
+            // 仅 disabled 时保留 alpha 层：enabled 占多数，去掉可免每帧一次 saveLayer
+            .then(if (isEnable) Modifier else Modifier.alpha(0.4f))
             .clip(RoundedCornerShape(50))
             .background(trackColor)
 

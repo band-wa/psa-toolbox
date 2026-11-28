@@ -5,8 +5,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -42,8 +42,6 @@ fun Modifier.liquidGlass(
             ),
             shape = shape
         )
-
-        .clip(shape)
 }
 
 @Composable
@@ -53,8 +51,12 @@ fun LiquidContainer(
     backgroundColor: Color = AppTheme.colors.glassBackgroundColor,
     content: @Composable BoxScope.() -> Unit
 ) {
+    // 玻璃外观与主题/形状绑定，缓存 Modifier 链避免重组时重复构建渐变
+    val glassModifier = remember(shape, backgroundColor) {
+        Modifier.liquidGlass(shape, backgroundColor)
+    }
     Box(
-        modifier = modifier.liquidGlass(shape, backgroundColor),
+        modifier = modifier.then(glassModifier),
         content = content
     )
 }
