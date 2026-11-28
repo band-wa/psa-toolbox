@@ -19,6 +19,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -69,21 +72,23 @@ fun AboutSettingsScreen(
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
         ) {
             Image(
-                painter = painterResource(id = R.drawable.qr_code),
+                bitmap = ImageBitmap.imageResource(id = R.drawable.qr_code),
                 contentDescription = "赞赏二维码",
                 modifier = Modifier
-                    .size(200.dp)
-                    .clip(RoundedCornerShape(6.dp))
+                    .size(160.dp)
+                    .clip(RoundedCornerShape(6.dp)),
+                filterQuality = FilterQuality.Medium
             )
 
             Spacer(modifier = Modifier.width(32.dp))
 
             Image(
-                painter = painterResource(id = R.drawable.repo_qr),
+                bitmap = ImageBitmap.imageResource(id = R.drawable.repo_qr),
                 contentDescription = "开源仓库二维码",
                 modifier = Modifier
-                    .size(200.dp)
-                    .clip(RoundedCornerShape(6.dp))
+                    .size(160.dp)
+                    .clip(RoundedCornerShape(6.dp)),
+                filterQuality = FilterQuality.Medium
             )
 
             Spacer(modifier = Modifier.width(32.dp))
