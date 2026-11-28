@@ -55,7 +55,7 @@ fun FuelAmountInput(
             },
         )
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
         Text(
             text = "¥ $amount",
             fontSize = 34.sp,

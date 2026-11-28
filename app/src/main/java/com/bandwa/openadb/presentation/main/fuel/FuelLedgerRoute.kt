@@ -275,7 +275,7 @@ private fun FuelAmountDialog(
                 .width(560.dp)
                 .clip(RoundedCornerShape(28.dp))
                 .background(colors.backgroundColor)
-                .padding(horizontal = 36.dp, vertical = 32.dp),
+                .padding(horizontal = 36.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
@@ -290,14 +290,14 @@ private fun FuelAmountDialog(
                 fontSize = 16.sp,
                 color = colors.textColorSecondary,
             )
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
 
             FuelAmountInput(
                 initialAmount = initialAmount,
                 onAmountChange = { amount = it },
             )
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
             Row(
                 modifier = Modifier.width(360.dp),
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
@@ -426,7 +426,7 @@ private fun TankCapacityDialog(
                 .width(560.dp)
                 .clip(RoundedCornerShape(28.dp))
                 .background(colors.backgroundColor)
-                .padding(horizontal = 36.dp, vertical = 32.dp),
+                .padding(horizontal = 36.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
@@ -441,11 +441,11 @@ private fun TankCapacityDialog(
                 fontSize = 16.sp,
                 color = colors.textColorSecondary,
             )
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
 
             DigitStepperRow(initialValue = initialLiters, onValueChange = { liters = it })
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(8.dp))
             Text(
                 text = "$liters L",
                 fontSize = 34.sp,
@@ -453,7 +453,7 @@ private fun TankCapacityDialog(
                 color = colors.textColorAccent,
             )
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
             Row(
                 modifier = Modifier.width(360.dp),
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
