@@ -36,7 +36,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.bandwa.openadb.component.DigitWheelRow
+import com.bandwa.openadb.component.DigitStepperRow
 import com.bandwa.openadb.component.FuelAmountInput
 import com.bandwa.openadb.component.SelectionText
 import com.bandwa.openadb.component.SwitchGroup
@@ -443,7 +443,7 @@ private fun TankCapacityDialog(
             )
             Spacer(Modifier.height(24.dp))
 
-            DigitWheelRow(initialValue = initialLiters, onValueChange = { liters = it })
+            DigitStepperRow(initialValue = initialLiters, onValueChange = { liters = it })
 
             Spacer(Modifier.height(12.dp))
             Text(

@@ -8,7 +8,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,19 +24,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bandwa.openadb.presentation.ui.AppTheme
-import kotlin.math.abs
 
 @Composable
 fun FuelAmountInput(
@@ -51,7 +47,7 @@ fun FuelAmountInput(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        DigitWheelRow(
+        DigitStepperRow(
             initialValue = initialAmount,
             onValueChange = {
                 amount = it
@@ -59,13 +55,7 @@ fun FuelAmountInput(
             },
         )
 
-        Spacer(Modifier.height(14.dp))
-        Text(
-            text = "上下拨动方块调整金额",
-            fontSize = 14.sp,
-            color = colors.textColorSecondary,
-        )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(16.dp))
         Text(
             text = "¥ $amount",
             fontSize = 34.sp,
@@ -75,8 +65,9 @@ fun FuelAmountInput(
     }
 }
 
+/** 三位数字输入：每位上方加号、下方减号；9 再加回到 0，0 再减回到 9。 */
 @Composable
-fun DigitWheelRow(
+fun DigitStepperRow(
     initialValue: Int,
     onValueChange: (Int) -> Unit,
 ) {
@@ -90,78 +81,80 @@ fun DigitWheelRow(
     }
 
     Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-        DigitWheel(hundreds) { hundreds = it }
-        DigitWheel(tens) { tens = it }
-        DigitWheel(ones) { ones = it }
+        DigitStepper(hundreds) { step -> hundreds = (hundreds + step + 10) % 10 }
+        DigitStepper(tens) { step -> tens = (tens + step + 10) % 10 }
+        DigitStepper(ones) { step -> ones = (ones + step + 10) % 10 }
     }
 }
 
 @Composable
-private fun DigitWheel(
+private fun DigitStepper(
     value: Int,
-    onValueChange: (Int) -> Unit,
+    onStep: (step: Int) -> Unit,
+) {
+    var increasing by remember { mutableStateOf(true) }
+    val colors = AppTheme.colors
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        StepButton(symbol = "+") {
+            increasing = true
+            onStep(1)
+        }
+        Spacer(Modifier.height(4.dp))
+        Box(
+            modifier = Modifier
+                .size(96.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(colors.tabBackgroundColor)
+                .border(2.dp, colors.glassBorderColor, RoundedCornerShape(20.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            AnimatedContent(
+                targetState = value,
+                transitionSpec = {
+                    if (increasing) {
+                        (slideInVertically { it } + fadeIn()) togetherWith (slideOutVertically { -it } + fadeOut())
+                    } else {
+                        (slideInVertically { -it } + fadeIn()) togetherWith (slideOutVertically { it } + fadeOut())
+                    }
+                },
+                label = "fuelDigit",
+            ) { digit ->
+                Text(
+                    text = digit.toString(),
+                    fontSize = 52.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    color = colors.textColorPrimary,
+                )
+            }
+        }
+        Spacer(Modifier.height(4.dp))
+        StepButton(symbol = "−") {
+            increasing = false
+            onStep(-1)
+        }
+    }
+}
+
+@Composable
+private fun StepButton(
+    symbol: String,
+    onClick: () -> Unit,
 ) {
     val colors = AppTheme.colors
-    val currentValue by rememberUpdatedState(value)
-    val update by rememberUpdatedState(onValueChange)
-    val stepPx = with(LocalDensity.current) { 44.dp.toPx() }
-    var dragAccum by remember { mutableStateOf(0f) }
-    var increasing by remember { mutableStateOf(true) }
-
-    var pendingValue by remember { mutableIntStateOf(value) }
-    LaunchedEffect(value) { pendingValue = value }
-
     Box(
         modifier = Modifier
-            .size(112.dp)
-            .clip(RoundedCornerShape(22.dp))
-            .background(colors.tabBackgroundColor)
-            .border(2.dp, colors.glassBorderColor, RoundedCornerShape(22.dp))
-            .pointerInput(Unit) {
-                detectVerticalDragGestures(
-                    onDragStart = { dragAccum = 0f },
-                    onDragEnd = { dragAccum = 0f },
-                    onDragCancel = { dragAccum = 0f },
-                ) { change, dragAmount ->
-                    change.consume()
-                    dragAccum += dragAmount
-                    var steps = 0
-                    while (abs(dragAccum) >= stepPx) {
-                        if (dragAccum < 0) {
-                            dragAccum += stepPx
-                            steps += 1
-                        } else {
-                            dragAccum -= stepPx
-                            steps -= 1
-                        }
-                    }
-                    if (steps != 0) {
-                        increasing = steps > 0
-                        pendingValue = ((pendingValue + steps) % 10 + 10) % 10
-                        update(pendingValue)
-                    }
-                }
-            },
+            .size(56.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        AnimatedContent(
-            targetState = value,
-            transitionSpec = {
-                if (increasing) {
-                    (slideInVertically { it } + fadeIn()) togetherWith (slideOutVertically { -it } + fadeOut())
-                } else {
-                    (slideInVertically { -it } + fadeIn()) togetherWith (slideOutVertically { it } + fadeOut())
-                }
-            },
-            label = "fuelDigit",
-        ) { digit ->
-            Text(
-                text = digit.toString(),
-                fontSize = 60.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                color = colors.textColorPrimary,
-            )
-        }
+        Text(
+            text = symbol,
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Bold,
+            color = colors.textColorPrimary,
+        )
     }
 }
